@@ -1,0 +1,10 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>New statement - step 2 of 3: generated AI prompt</h2>
+<p class="muted">Review or copy this generated prompt. The next step is pasting the AI JSON response.</p>
+<h3>{{ statement.title or "Untitled statement" }}</h3>
+<textarea readonly rows="24">{{ prompt }}</textarea>
+<form method="get" action="/internal/statements/{{ statement.id }}/ai-json">
+  <button type="submit">Next</button>
+</form>
+{% endblock %}

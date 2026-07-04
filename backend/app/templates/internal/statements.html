@@ -1,0 +1,25 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>Statements</h2>
+<p><a href="/internal/statements/new">New statement</a></p>
+<table>
+  <tr><th>Title</th><th>Politician</th><th>Status</th><th>Actions</th></tr>
+  {% for statement in statements %}
+    <tr>
+      <td>{{ statement.title or "Untitled statement" }}</td>
+      <td>{{ statement.politician.full_name }}</td>
+      <td>{{ statement.status }}</td>
+      <td>
+        <a href="/internal/statements/{{ statement.id }}/preview">Preview</a>
+        <a href="/internal/statements/{{ statement.id }}/edit">Edit</a>
+        {% if session.role == "root_admin" %}
+          <form method="post" action="/internal/statements/{{ statement.id }}/delete" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit">Delete</button>
+          </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+</table>
+{% endblock %}

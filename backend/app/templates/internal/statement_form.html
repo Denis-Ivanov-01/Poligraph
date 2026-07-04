@@ -1,0 +1,30 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>{{ form_title }}</h2>
+<p class="muted">{{ form_note }}</p>
+<form method="post" action="{{ form_action }}" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Title <input name="title" value="{{ statement.title if statement and statement.title else '' }}"></label>
+  <label>Source type <input name="source_type" value="{{ statement.source_type if statement else '' }}" required></label>
+  <label>Source URL <input name="source_url" value="{{ statement.source_url if statement and statement.source_url else '' }}"></label>
+  <label>Statement date <input name="statement_date" type="date" value="{{ statement.statement_date if statement and statement.statement_date else '' }}"></label>
+  <label>Politician
+    <select name="politician_id" required>
+      {% for politician in politicians %}
+        <option value="{{ politician.id }}" {% if statement and statement.politician_id == politician.id %}selected{% endif %}>{{ politician.full_name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Party at statement time
+    <select name="party_at_statement_time_id">
+      <option value="">None</option>
+      {% for party in parties %}
+        <option value="{{ party.id }}" {% if statement and statement.party_at_statement_time_id == party.id %}selected{% endif %}>{{ party.full_name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Original statement <textarea name="original_text" required>{{ statement.original_text if statement else '' }}</textarea></label>
+  <label>Internal notes <textarea name="internal_notes">{{ statement.internal_notes if statement and statement.internal_notes else '' }}</textarea></label>
+  <button type="submit">{{ submit_label }}</button>
+</form>
+{% endblock %}

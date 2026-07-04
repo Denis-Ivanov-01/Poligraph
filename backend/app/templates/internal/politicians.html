@@ -1,0 +1,11 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>Politicians</h2>
+<p><a href="/internal/politicians/new">New politician</a></p>
+<table>
+  <tr><th>Name</th><th>Slug</th></tr>
+  {% for politician in politicians %}
+    <tr><td>{{ politician.full_name }}</td><td>{{ politician.slug }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

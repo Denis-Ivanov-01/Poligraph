@@ -1,0 +1,12 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>New party</h2>
+<form method="post" action="/internal/parties" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Slug <input name="slug" required></label>
+  <label>Full name <input name="full_name" required></label>
+  <label>Short name <input name="short_name" required></label>
+  <label>Description <textarea name="description"></textarea></label>
+  <button type="submit">Create party</button>
+</form>
+{% endblock %}

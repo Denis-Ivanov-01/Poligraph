@@ -1,0 +1,27 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>Moderators</h2>
+<form method="post" action="/internal/moderators" class="stack compact">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Username <input name="username" required></label>
+  <label>Password <input name="password" type="password" required></label>
+  <button type="submit">Create moderator</button>
+</form>
+<table>
+  <tr><th>Username</th><th>Active</th><th>Action</th></tr>
+  {% for moderator in moderators %}
+    <tr>
+      <td>{{ moderator.username }}</td>
+      <td>{{ moderator.is_active }}</td>
+      <td>
+        {% if moderator.is_active %}
+          <form method="post" action="/internal/moderators/{{ moderator.id }}/deactivate" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit">Deactivate</button>
+          </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+</table>
+{% endblock %}

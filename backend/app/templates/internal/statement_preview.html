@@ -1,0 +1,32 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>{{ statement.title or "Untitled statement" }}</h2>
+<p>Status: {{ statement.status }}</p>
+<p>Politician: {{ statement.politician.full_name }}</p>
+<pre>{{ statement.original_text }}</pre>
+{% if statement.ai_analysis %}
+  <h3>AI analysis</h3>
+  <p>Overall: {{ statement.ai_analysis.overall_score }}</p>
+  <ul>
+    <li>Factual accuracy: {{ statement.ai_analysis.factual_accuracy_score }} - {{ statement.ai_analysis.factual_accuracy_explanation }}</li>
+    <li>Logical consistency: {{ statement.ai_analysis.logical_consistency_score }} - {{ statement.ai_analysis.logical_consistency_explanation }}</li>
+    <li>Communicational integrity: {{ statement.ai_analysis.communicational_integrity_score }} - {{ statement.ai_analysis.communicational_integrity_explanation }}</li>
+    <li>Principle consistency: {{ statement.ai_analysis.principle_consistency_score }} - {{ statement.ai_analysis.principle_consistency_explanation }}</li>
+    <li>Overall: {{ statement.ai_analysis.overall_score }} - {{ statement.ai_analysis.overall_explanation }}</li>
+  </ul>
+  {% if statement.ai_analysis.source_urls %}
+    <h3>Source URLs</h3>
+    <ul>
+      {% for source in statement.ai_analysis.source_urls %}
+        <li><a href="{{ source.url }}">{{ source.url }}</a>{% if source.description %} - {{ source.description }}{% endif %}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+  <form method="post" action="/internal/statements/{{ statement.id }}/publish">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit">Publish</button>
+  </form>
+{% else %}
+  <p>No AI analysis yet.</p>
+{% endif %}
+{% endblock %}

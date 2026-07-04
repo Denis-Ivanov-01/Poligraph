@@ -1,0 +1,18 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>New politician</h2>
+<form method="post" action="/internal/politicians" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Slug <input name="slug" required></label>
+  <label>Full name <input name="full_name" required></label>
+  <label>Picture URL <input name="image_url" type="url" placeholder="https://example.com/photo.jpg"></label>
+  <label>Biography <textarea name="biography"></textarea></label>
+  <label>Current party
+    <select name="party_id">
+      <option value="">None</option>
+      {% for party in parties %}<option value="{{ party.id }}">{{ party.full_name }}</option>{% endfor %}
+    </select>
+  </label>
+  <button type="submit">Create politician</button>
+</form>
+{% endblock %}

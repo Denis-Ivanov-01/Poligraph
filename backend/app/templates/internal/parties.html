@@ -1,0 +1,11 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>Parties</h2>
+<p><a href="/internal/parties/new">New party</a></p>
+<table>
+  <tr><th>Name</th><th>Slug</th><th>Short name</th></tr>
+  {% for party in parties %}
+    <tr><td>{{ party.full_name }}</td><td>{{ party.slug }}</td><td>{{ party.short_name }}</td></tr>
+  {% endfor %}
+</table>
+{% endblock %}

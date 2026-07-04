@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Internal - Political AI Filter</title>
+    <link rel="stylesheet" href="/static/internal.css">
+  </head>
+  <body>
+    <header>
+      <h1>Political AI Filter</h1>
+      {% if session.role %}
+        <nav>
+          <a href="/internal">Home</a>
+          <a href="/internal/parties">Parties</a>
+          <a href="/internal/politicians">Politicians</a>
+          <a href="/internal/statements">Statements</a>
+          <a href="/internal/audit-logs">Audit logs</a>
+          {% if session.role == "root_admin" %}<a href="/internal/moderators">Moderators</a>{% endif %}
+          <form method="post" action="/internal/logout">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit">Logout</button>
+          </form>
+        </nav>
+      {% endif %}
+    </header>
+    <main>
+      {% if error %}<p class="error">{{ error }}</p>{% endif %}
+      {% block content %}{% endblock %}
+    </main>
+  </body>
+</html>

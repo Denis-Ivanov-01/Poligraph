@@ -1,0 +1,10 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>Internal app</h2>
+<p>Signed in as {{ user.username }} ({{ user.role }}).</p>
+<div class="actions">
+  <a href="/internal/parties/new">Create party</a>
+  <a href="/internal/politicians/new">Create politician</a>
+  <a href="/internal/statements/new">Create statement</a>
+</div>
+{% endblock %}

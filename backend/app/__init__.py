@@ -1,0 +1,1 @@
+"""Political statement analysis backend."""
