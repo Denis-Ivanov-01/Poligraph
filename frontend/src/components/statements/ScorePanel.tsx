@@ -2,7 +2,7 @@ import type { AiScores } from "../../types/aiAnalysis";
 import { text } from "../../i18n/resources";
 import { ScoreBadge } from "../common/ScoreBadge";
 
-const labels: Record<keyof AiScores, string> = {
+export const scoreLabels: Record<keyof AiScores, string> = {
   factual_accuracy: text.scores.factualAccuracy,
   logical_consistency: text.scores.logicalConsistency,
   communicational_integrity: text.scores.communicationalIntegrity,
@@ -10,13 +10,65 @@ const labels: Record<keyof AiScores, string> = {
   overall: text.scores.overall
 };
 
-export function ScorePanel({ scores }: { scores: AiScores }) {
+type ScorePanelProps = {
+  scores: AiScores;
+  activeScore?: keyof AiScores;
+  lockedScore?: keyof AiScores | null;
+  variant?: "default" | "featured";
+  onScoreSelect?: (key: keyof AiScores) => void;
+  onScorePreview?: (key: keyof AiScores) => void;
+};
+
+export function ScorePanel({
+  scores,
+  activeScore,
+  lockedScore,
+  variant = "default",
+  onScoreSelect,
+  onScorePreview
+}: ScorePanelProps) {
+  if (onScoreSelect) {
+    return (
+      <div className="score-grid score-grid-featured score-grid-interactive" aria-label={text.analysis.explanations}>
+        {(Object.keys(scoreLabels) as Array<keyof AiScores>).map((key) => (
+          <button
+            className={[
+              "score-item",
+              "score-trigger",
+              key === "overall" ? "score-item-featured" : "",
+              activeScore === key ? "score-item-active" : "",
+              lockedScore === key ? "score-item-locked" : ""
+            ].filter(Boolean).join(" ")}
+            key={key}
+            type="button"
+            aria-pressed={lockedScore === key}
+            onClick={() => onScoreSelect(key)}
+            onFocus={() => onScorePreview?.(key)}
+            onMouseEnter={() => onScorePreview?.(key)}
+          >
+            <span className="score-label">{scoreLabels[key]}</span>
+            <ScoreBadge value={scores[key]} size={key === "overall" ? "large" : "medium"} />
+          </button>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <dl className="score-grid">
-      {(Object.keys(labels) as Array<keyof AiScores>).map((key) => (
-        <div className={key === "overall" ? "score-item score-item-featured" : "score-item"} key={key}>
-          <dt>{labels[key]}</dt>
-          <dd><ScoreBadge value={scores[key]} size={key === "overall" ? "large" : "medium"} /></dd>
+    <dl className={variant === "featured" ? "score-grid score-grid-featured" : "score-grid"}>
+      {(Object.keys(scoreLabels) as Array<keyof AiScores>).map((key) => (
+        <div
+          className={[
+            "score-item",
+            key === "overall" ? "score-item-featured" : "",
+            activeScore === key ? "score-item-active" : ""
+          ].filter(Boolean).join(" ")}
+          key={key}
+        >
+          <dt>{scoreLabels[key]}</dt>
+          <dd>
+            <ScoreBadge value={scores[key]} size={key === "overall" ? "large" : "medium"} />
+          </dd>
         </div>
       ))}
     </dl>

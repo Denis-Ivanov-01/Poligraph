@@ -17,13 +17,16 @@ export function StatementDetailsPage() {
   if (!data) return <EmptyState message={text.statements.notFound} />;
   return (
     <article className="section detail">
-      <h1>{statementDisplayTitle(data)}</h1>
-      <p className="muted">
-        {data.politician.full_name}
-        {data.party_at_statement_time ? `, ${data.party_at_statement_time.full_name}` : ""} {text.common.separator} {data.statement_date ?? text.common.noDate} {text.common.separator} {data.source_type}
-      </p>
-      {data.source_url ? <p><a href={data.source_url}>{text.common.source}</a></p> : null}
-      <section>
+      <header className="detail-hero">
+        <p className="eyebrow">{data.statement_date ?? text.common.noDate} {text.common.separator} {data.source_type}</p>
+        <h1>{statementDisplayTitle(data)}</h1>
+        <p className="muted">
+          {data.politician.full_name}
+          {data.party_at_statement_time ? `, ${data.party_at_statement_time.full_name}` : ""}
+        </p>
+        {data.source_url ? <a className="button-secondary" href={data.source_url}>{text.common.source}</a> : null}
+      </header>
+      <section className="content-panel">
         <h2>{text.statements.original}</h2>
         <p className="statement-text">{data.original_text}</p>
       </section>

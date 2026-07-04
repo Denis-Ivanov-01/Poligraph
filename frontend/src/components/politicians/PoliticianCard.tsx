@@ -6,15 +6,17 @@ import { PoliticianAvatar } from "./PoliticianAvatar";
 
 export function PoliticianCard({ politician }: { politician: Politician }) {
   return (
-    <article className="card politician-card">
-      <PoliticianAvatar politician={politician} className="profile-photo-small" />
-      <div>
-        <h3>
-          <Link to={`/politicians/${politician.slug}`}>{politician.full_name}</Link>
-        </h3>
-        <p className="muted">{politician.current_party?.short_name ?? text.politicians.noCurrentParty}</p>
-        {politician.biography ? <p>{politician.biography}</p> : null}
-      </div>
-    </article>
+    <Link className="entity-card politician-card" to={`/politicians/${politician.slug}`}>
+      <article>
+        <PoliticianAvatar politician={politician} className="profile-photo-small" />
+        <div>
+          <div className="entity-card-kicker">
+            {politician.current_party?.short_name ?? text.politicians.noCurrentParty}
+          </div>
+          <h3>{politician.full_name}</h3>
+          {politician.biography ? <p>{politician.biography}</p> : null}
+        </div>
+      </article>
+    </Link>
   );
 }

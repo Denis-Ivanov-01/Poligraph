@@ -1,28 +1,52 @@
-import type { AiAnalysis } from "../../types/aiAnalysis";
+import { useState } from "react";
+
+import type { AiAnalysis, AiScores } from "../../types/aiAnalysis";
 import { text } from "../../i18n/resources";
-import { ScorePanel } from "./ScorePanel";
+import { ScorePanel, scoreLabels } from "./ScorePanel";
 
 export function AiDetailsPanel({ analysis }: { analysis: AiAnalysis }) {
+  const [activeExplanation, setActiveExplanation] = useState<keyof AiScores>("overall");
+  const [lockedExplanation, setLockedExplanation] = useState<keyof AiScores | null>(null);
+
+  function previewExplanation(score: keyof AiScores) {
+    if (!lockedExplanation) {
+      setActiveExplanation(score);
+    }
+  }
+
+  function selectExplanation(score: keyof AiScores) {
+    if (lockedExplanation === score) {
+      setLockedExplanation(null);
+      return;
+    }
+
+    setActiveExplanation(score);
+    setLockedExplanation(score);
+  }
+
   return (
-    <section className="section">
+    <section className="section analysis-panel">
       <h2>{text.analysis.title}</h2>
-      <ScorePanel scores={analysis.scores} />
-      <div className="explanations">
-        <h3>{text.analysis.explanations}</h3>
-        <p><strong>{text.scores.factualAccuracy}:</strong> {analysis.explanations.factual_accuracy}</p>
-        <p><strong>{text.scores.logicalConsistency}:</strong> {analysis.explanations.logical_consistency}</p>
-        <p><strong>{text.scores.communicationalIntegrity}:</strong> {analysis.explanations.communicational_integrity}</p>
-        <p><strong>{text.scores.principleConsistency}:</strong> {analysis.explanations.principle_consistency}</p>
-        <p><strong>{text.scores.overall}:</strong> {analysis.explanations.overall}</p>
+      <ScorePanel
+        activeScore={activeExplanation}
+        lockedScore={lockedExplanation}
+        onScorePreview={previewExplanation}
+        onScoreSelect={selectExplanation}
+        scores={analysis.scores}
+      />
+      <div className="explanation-panel" aria-live="polite" key={activeExplanation}>
+        <p className="eyebrow">{text.analysis.explanations}</p>
+        <h3>{scoreLabels[activeExplanation]}</h3>
+        <p>{analysis.explanations[activeExplanation]}</p>
       </div>
       {analysis.source_urls.length ? (
-        <div className="explanations">
+        <div className="source-panel">
           <h3>{text.analysis.sourceUrls}</h3>
-          <ul>
+          <ul className="source-list">
             {analysis.source_urls.map((source) => (
               <li key={source.url}>
-                <a href={source.url}>{source.url}</a>
-                {source.description ? ` - ${source.description}` : ""}
+                <a href={source.url}>{source.description || source.url}</a>
+                {source.description ? <span>{source.url}</span> : null}
               </li>
             ))}
           </ul>

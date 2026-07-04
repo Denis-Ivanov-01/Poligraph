@@ -3,7 +3,7 @@ import { PartyCard } from "./PartyCard";
 
 export function PartyList({ parties }: { parties: PoliticalParty[] }) {
   return (
-    <div className="grid">
+    <div className="grid entity-list">
       {parties.map((party) => (
         <PartyCard key={party.id} party={party} />
       ))}
