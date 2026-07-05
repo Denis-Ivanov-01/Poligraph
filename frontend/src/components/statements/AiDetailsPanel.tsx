@@ -45,21 +45,13 @@ export function AiDetailsPanel({ analysis }: { analysis: AiAnalysis }) {
           <ul className="source-list">
             {analysis.source_urls.map((source) => (
               <li key={source.url}>
-                <a href={source.url}>{source.description || source.url}</a>
+                <a href={source.url} rel="noreferrer" target="_blank">{source.description || source.url}</a>
                 {source.description ? <span>{source.url}</span> : null}
               </li>
             ))}
           </ul>
         </div>
       ) : null}
-      <details>
-        <summary>{text.analysis.details}</summary>
-        <p>{text.analysis.model}: {analysis.model_name}</p>
-        <p>{text.analysis.promptVersion}: {analysis.prompt_version}</p>
-        <p>{text.analysis.schemaVersion}: {analysis.schema_version}</p>
-        <pre>{analysis.ai_details.prompt_text}</pre>
-        <pre>{analysis.ai_details.raw_ai_response}</pre>
-      </details>
     </section>
   );
 }

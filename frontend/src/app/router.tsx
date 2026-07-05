@@ -1,5 +1,7 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter } from "react-router-dom";
 
+import { LoadingState } from "../components/common/LoadingState";
 import { PublicLayout } from "../components/layout/PublicLayout";
 import { DashboardPage } from "../pages/DashboardPage";
 import { HomePage } from "../pages/HomePage";
@@ -11,6 +13,10 @@ import { PoliticiansPage } from "../pages/PoliticiansPage";
 import { SearchPage } from "../pages/SearchPage";
 import { StatementDetailsPage } from "../pages/StatementDetailsPage";
 import { StatementsPage } from "../pages/StatementsPage";
+
+const MethodologyPage = lazy(() =>
+  import("../pages/MethodologyPage").then((module) => ({ default: module.MethodologyPage }))
+);
 
 export const router = createBrowserRouter([
   {
@@ -25,6 +31,14 @@ export const router = createBrowserRouter([
       { path: "statements", element: <StatementsPage /> },
       { path: "statements/:id", element: <StatementDetailsPage /> },
       { path: "dashboard", element: <DashboardPage /> },
+      {
+        path: "methodology",
+        element: (
+          <Suspense fallback={<LoadingState />}>
+            <MethodologyPage />
+          </Suspense>
+        )
+      },
       { path: "search", element: <SearchPage /> },
       { path: "*", element: <NotFoundPage /> }
     ]

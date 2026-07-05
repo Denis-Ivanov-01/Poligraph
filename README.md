@@ -1,58 +1,207 @@
 # Political AI Filter
 
-Monorepo MVP for a public read-only political statement analysis platform.
+Political AI Filter is an open-source civic-tech project for transparent AI-assisted analysis of public political statements.
 
-## Architecture
+The platform evaluates specific political statements, not politicians as people and not ideologies as "right" or "wrong". It looks at four dimensions:
 
-- `backend/`: FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, server-rendered `/internal`.
-- `frontend/`: React, TypeScript, Vite public website.
-- Public frontend consumes only `/api/*`.
-- Internal moderator/root-admin workflows live under `/internal`.
+- Factual accuracy
+- Logical consistency
+- Communicational integrity
+- Principle consistency
 
-## Local Development
+The goal is to make political speech more inspectable. It is not to tell people who to vote for.
 
-1. Copy `.env.example` to `.env`.
-2. Run:
+## Why this project exists
+
+Political speech often reaches people as a mix of facts, arguments, promises, accusations, framing, and selective context. A statement can contain accurate facts but still lead to a weak conclusion. It can sound confident while leaving out context that matters. It can also be consistent with a politician's earlier position, or quietly depart from it.
+
+This project exists to make public political statements easier to inspect. Instead of asking only whether someone likes a politician or agrees with a party, the platform asks a narrower question: what does this specific public statement give the citizen?
+
+The aim is not to remove political disagreement. Disagreement is part of democracy. The aim is to help that disagreement start from clearer facts, better arguments, and a more visible record of how each analysis was produced.
+
+## What the platform evaluates
+
+- **Factual accuracy** - are verifiable factual claims supported by reliable evidence?
+- **Logical consistency** - do the conclusions follow from the premises?
+- **Communicational integrity** - is the information presented in a way that does not materially mislead?
+- **Principle consistency** - is the position consistent with previous public positions on the same issue?
+
+## What the platform does not evaluate
+
+The project does not try to decide which ideology is correct, whether a political position is desirable, or whether a politician is a good person. It focuses on something narrower and more inspectable: how a specific public statement is constructed, supported, argued, communicated, and connected to previous positions.
+
+## How each analysis is produced
+
+Each published analysis should leave an audit trail:
+
+1. The original statement text is copied from a public and verifiable source.
+2. The statement is analyzed using a visible instruction to the AI model.
+3. The selected AI model returns a structured response.
+4. The raw model response is stored and made available.
+5. A moderator reviews the result for obvious technical, factual, or structural problems.
+6. If the review is passed, the analysis is published.
+
+AI models are not perfectly deterministic. The same model can sometimes produce slightly different answers, and different models can differ more. The project does not claim perfect or final automated truth. The goal is a transparent and inspectable process.
+
+## Applications included in this repository
+
+This repository includes both the public read-only platform and the internal moderator/admin interface.
+
+### Public platform
+
+The public platform is a read-only interface for browsing analyzed statements, politicians, parties, rankings, methodology, and transparency information.
+
+### Internal moderation interface
+
+The internal interface is a web application for trusted administrators and moderators. It may include:
+
+- managing parties;
+- managing politicians;
+- adding statement sources and raw statement text;
+- generating or storing AI analysis results;
+- reviewing raw model outputs;
+- approving or rejecting analyses before publication.
+
+The internal interface is not intended for public access and must be protected in production.
+
+## Documentation
+
+- [Technical documentation](./docs/TECHNICAL.md)
+- [Methodology rationale](./docs/METHODOLOGY.md)
+
+The technical documentation covers architecture, setup, data flow, environment variables, moderation workflow, and deployment assumptions.
+
+The methodology rationale covers the evaluation criteria, the role of AI, limitations, uncertainty handling, correction policy, and source standards.
+
+## Future Development Directions
+
+### 1. Promise-vs-action analysis
+
+The project may expand from isolated statement analysis toward comparing political promises with later actions, votes, decisions, public records, and institutional outcomes.
+
+This would make it easier to track whether politicians and parties follow through on stated commitments. It is a natural extension of principle consistency, but broader: it compares speech with real-world action, not only speech with previous speech.
+
+### 2. Safer and more automated analysis
+
+The project should gradually move toward more automated analysis while reducing unnecessary manual moderator workload. This needs to happen incrementally and safely.
+
+Future automation should preserve:
+
+- auditability;
+- raw input/output visibility;
+- model and prompt versioning;
+- confidence and uncertainty handling;
+- fallback to human review;
+- checks for obvious technical, factual, or structural errors;
+- conservative publishing rules for high-risk or low-confidence analyses.
+
+The direction is not to remove moderators entirely. The direction is to reduce repetitive manual work while keeping the process reliable, transparent, and low-risk.
+
+## Tech stack
+
+This section reflects the current implementation and should be updated as the architecture evolves.
+
+- **Backend:** FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Jinja2 server-rendered internal pages
+- **Frontend:** React, TypeScript, Vite, React Router
+- **Content:** editable Markdown methodology content rendered in the public frontend
+- **Local development:** Docker Compose
+
+## Local development
+
+Copy the example environment file:
+
+```bash
+cp .env.example .env
+```
+
+Start the local stack:
 
 ```bash
 docker compose up --build
 ```
 
-Services:
+Local services:
 
-- Backend: `http://localhost:8000`
+- Backend API: `http://localhost:8000`
 - Public frontend: `http://localhost:5173`
 - Internal app: `http://localhost:8000/internal`
 
-Development root admin defaults from `.env.example`:
+The frontend can also be run from `frontend/`:
 
-- Username: `admin`
-- Password: `admin`
+```bash
+npm install
+npm run dev
+npm run build
+```
 
-For production, replace `ROOT_ADMIN_PASSWORD_HASH` with an Argon2 hash and set a strong `APP_SECRET_KEY`.
+The backend can also be run from `backend/` after installing the Python package dependencies:
 
-## Public API
+```bash
+alembic upgrade head
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
 
-Read-only endpoints:
+## Environment variables
 
-- `GET /api/parties`
-- `GET /api/parties/{slug}`
-- `GET /api/politicians`
-- `GET /api/politicians/{slug}`
-- `GET /api/statements`
-- `GET /api/statements/{id}`
-- `GET /api/dashboard`
-- `GET /api/search?q=...`
+The repository includes `.env.example`. Do not commit real secrets.
 
-Public endpoints exclude drafts, archived/deleted statements, internal notes, moderator data, audit logs, and unpublished AI analyses.
+Important configuration currently includes:
 
-## Internal Workflow
+- `DATABASE_URL`
+- `REDIS_URL`
+- `APP_ENV`
+- `APP_SECRET_KEY`
+- `SESSION_COOKIE_NAME`
+- `ROOT_ADMIN_USERNAME`
+- `ROOT_ADMIN_PASSWORD_HASH`
+- `ROOT_ADMIN_ENABLED`
+- `PUBLIC_BASE_URL`
+- `BACKEND_BASE_URL`
+- `MEDIA_STORAGE_PATH`
+- `CORS_ALLOWED_ORIGINS`
+- `VITE_API_BASE_URL`
+- `VITE_PUBLIC_BASE_URL`
 
-1. Root Admin logs in at `/internal/login`.
-2. Root Admin creates moderators.
-3. Moderator creates parties, politicians, and draft statements.
-4. Moderator generates an AI prompt.
-5. Moderator pastes AI JSON.
-6. Valid AI JSON creates or replaces `ai_analyses`.
-7. Publishing makes the statement and AI analysis visible through the public API.
-8. Sensitive internal actions are written to `audit_logs`.
+Internal moderation credentials, AI API keys, and any write-access configuration must be stored securely. For production, replace development defaults such as `ROOT_ADMIN_PASSWORD_HASH=plain:admin` and use a strong `APP_SECRET_KEY`.
+
+## Project status
+
+The project is in early development.
+
+Current priorities include:
+
+- public statement pages;
+- politician and party pages;
+- transparent AI analysis workflow;
+- methodology page;
+- internal moderation workflow;
+- score aggregation and ranking logic;
+- source and evidence traceability.
+
+## Contributing
+
+Contributions are welcome. Useful areas include:
+
+- UI/UX;
+- methodology wording;
+- technical architecture;
+- moderation workflow;
+- security review;
+- accessibility;
+- source transparency;
+- tests;
+- documentation.
+
+Please keep changes focused, transparent, and respectful of the civic purpose of the project.
+
+## Responsible use
+
+This project should not be used to harass, defame, or target individuals. The goal is to improve the quality of public political discourse by making claims, arguments, context, and inconsistencies easier to inspect.
+
+## License
+
+The source code is licensed under the MIT License.
+
+The methodology and original documentation may be licensed separately under CC BY 4.0 unless otherwise stated.
+
+Third-party political statements, quoted materials, external sources, media excerpts, and linked documents are not covered by this repository's license and remain under their respective owners' rights.
