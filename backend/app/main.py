@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
-from app.routers.internal import ai_workflow, appeals, audit_logs, auth, home, moderators, parties as internal_parties
+from app.routers.internal import ai_workflow, appeals, audit_logs, auth, diagnostics, home, moderators, parties as internal_parties
 from app.routers.internal import politicians as internal_politicians
 from app.routers.internal import statements as internal_statements
 from app.routers.public import dashboard, parties, politicians, search, statements
@@ -38,6 +38,7 @@ def create_app() -> FastAPI:
     app.include_router(moderators.router)
     app.include_router(audit_logs.router)
     app.include_router(appeals.router)
+    app.include_router(diagnostics.router)
 
     @app.get("/health")
     def health():

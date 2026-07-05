@@ -17,6 +17,7 @@
           <a href="/internal/statements">Statements</a>
           <a href="/internal/audit-logs">Audit logs</a>
           {% if session.role == "root_admin" %}<a href="/internal/moderators">Moderators</a>{% endif %}
+          {% if session.role == "root_admin" and diagnostics_panel_enabled %}<a href="{{ diagnostics_panel_path }}">Diagnostics</a>{% endif %}
           <form method="post" action="/internal/logout">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button type="submit">Logout</button>

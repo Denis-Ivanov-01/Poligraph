@@ -1,0 +1,36 @@
+{% extends "internal/base.html" %}
+
+{% block content %}
+<section class="panel diagnostics-panel">
+  <h2>Diagnostics Panel</h2>
+  <p class="muted">This page is for internal analytics only and is not visible to public users.</p>
+
+  {% if not diagnostics_enabled %}
+    <div class="empty-state">
+      <h3>Diagnostics are disabled</h3>
+      <p>Set <code>DIAGNOSTICS_PANEL_ENABLED=true</code> to enable this internal page.</p>
+    </div>
+  {% elif dashboard_url %}
+    <div class="actions">
+      <a class="button" href="{{ dashboard_url }}" target="_blank" rel="noopener noreferrer">Open analytics dashboard</a>
+    </div>
+    <iframe
+      class="diagnostics-frame"
+      src="{{ dashboard_url }}"
+      title="Analytics dashboard"
+      loading="lazy"
+      referrerpolicy="no-referrer"
+    ></iframe>
+  {% elif dashboard_url_configured %}
+    <div class="empty-state">
+      <h3>Dashboard URL is not usable</h3>
+      <p><code>DIAGNOSTICS_DASHBOARD_URL</code> must start with <code>http://</code> or <code>https://</code>.</p>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <h3>No dashboard configured</h3>
+      <p>Set <code>DIAGNOSTICS_DASHBOARD_URL</code> to an Umami shared dashboard URL to embed analytics here.</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}
