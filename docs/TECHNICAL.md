@@ -1,40 +1,59 @@
 # Technical Documentation
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Application Areas](#application-areas)
+- [Public Frontend](#public-frontend)
+- [Backend and Internal App](#backend-and-internal-app)
+- [Analysis Data Flow](#analysis-data-flow)
+- [Content and Localization](#content-and-localization)
+- [Umami Analytics and Diagnostics](#umami-analytics-and-diagnostics)
+- [Environment Variables](#environment-variables)
+- [Local Development](#local-development)
+- [Build and Deployment](#build-and-deployment)
+- [Security Notes](#security-notes)
+- [Documentation Links](#documentation-links)
+
 ## Overview
 
-Political AI Filter is a monorepo with two application surfaces:
+Political AI Filter is an open-source civic-tech monorepo with two main surfaces:
 
-- a public read-only platform for browsing analyzed political statements;
-- an internal moderation/admin interface for trusted users.
+- a public read-only React application for browsing analyzed political statements, politicians, parties, rankings, methodology, and transparency information;
+- an internal FastAPI/Jinja2 moderation and administration interface for trusted users.
 
-The repository also contains shared public content, including the methodology Markdown used by the frontend.
+The repository also includes editable public content, shared resource files, Docker-based local infrastructure, and an optional internal analytics diagnostics panel.
 
 ## Architecture
 
 The current implementation includes:
 
-- `backend/` - FastAPI backend with SQLAlchemy models, Alembic migrations, PostgreSQL, Redis, and Jinja2 templates for the internal interface.
-- `frontend/` - React, TypeScript, and Vite public frontend.
-- `frontend/src/content/` - editable Markdown content, including the methodology document rendered on the public methodology page.
-- `docker-compose.yml` - local development stack for PostgreSQL, Redis, backend, and frontend.
+- `backend/` - FastAPI backend with SQLAlchemy models, Alembic migrations, PostgreSQL, Redis, internal Jinja2 templates, and public API routers.
+- `frontend/` - React, TypeScript, Vite, and React Router public frontend.
+- `frontend/src/content/` - editable Markdown content, including the public methodology document.
+- `frontend/src/resources.json` - public frontend strings used through `frontend/src/i18n/resources.ts`.
+- `backend/app/resources.json` - backend resource values used by backend services, including AI prompt language configuration.
+- `docker-compose.yml` - local development stack for PostgreSQL, Redis, backend, frontend, Umami, and Umami PostgreSQL.
 
-The public frontend consumes read-only API endpoints under `/api/*`. Internal moderation workflows are served by the backend under `/internal`.
+The public frontend consumes read-only API endpoints under `/api/*`. Internal moderation workflows are served by the backend under `/internal`. The diagnostics panel is protected separately at `/diagnostics_panel` by default.
 
-## Main application areas
+## Application Areas
 
 ### Public routes and pages
 
 The public React app currently includes routes for:
 
-- `/` - home page
-- `/parties` and `/parties/:slug`
-- `/politicians` and `/politicians/:slug`
-- `/statements` and `/statements/:id`
-- `/dashboard`
-- `/methodology`
-- `/search`
+- `/` - public home page;
+- `/dashboard` - public dashboard, previously the home-page style overview;
+- `/parties` and `/parties/:slug`;
+- `/politicians` and `/politicians/:slug`;
+- `/statements` and `/statements/:id`;
+- `/methodology`;
+- `/search`;
+- `*` - not-found page.
 
-The public API includes routers for parties, politicians, statements, dashboard data, and search.
+The public API includes routers for dashboard data, parties, politicians, statements, and search.
 
 ### Internal moderator/admin routes
 
@@ -49,45 +68,149 @@ The backend includes internal routes under `/internal`, including:
 - audit logs;
 - appeals placeholder/workflow area.
 
-These routes are intended for trusted users only.
+The internal diagnostics panel is mounted at `/diagnostics_panel` by default and can also be exposed at a configured path with `DIAGNOSTICS_PANEL_PATH`.
 
-### Shared components and content
+## Public Frontend
 
-The public frontend uses reusable statement, score, party, politician, layout, and common UI components. Public UI strings are stored in `frontend/src/resources.json` and exposed through `frontend/src/i18n/resources.ts`.
+The public frontend is a Vite React app. Routing is defined in `frontend/src/app/router.tsx`, with `PublicLayout` wrapping shared layout, navigation, footer, and optional analytics.
 
-The methodology page renders Markdown from `frontend/src/content/methodology.bg.md` using `react-markdown` and `remark-gfm`.
+Key frontend conventions:
 
-## Analysis data flow
+- Page-level copy should come from `frontend/src/resources.json` unless it is database content or long-form Markdown content.
+- Long-form methodology content lives in `frontend/src/content/methodology.bg.md`.
+- The methodology page renders Markdown through `react-markdown` and `remark-gfm`.
+- Shared UI elements live under `frontend/src/components/`.
+- Public API clients live under `frontend/src/api/`.
+
+## Backend and Internal App
+
+The backend is a FastAPI application with:
+
+- SQLAlchemy ORM models in `backend/app/models/`;
+- Pydantic schemas in `backend/app/schemas/`;
+- public routers in `backend/app/routers/public/`;
+- internal routers in `backend/app/routers/internal/`;
+- shared services in `backend/app/services/`;
+- internal Jinja2 templates in `backend/app/templates/internal/`;
+- internal CSS in `backend/app/static/internal.css`.
+
+Configuration is loaded through `backend/app/config.py` using Pydantic settings. Docker Compose passes the local development values directly into the backend container.
+
+## Analysis Data Flow
 
 The intended analysis workflow is:
 
 1. A moderator adds the source and raw statement text.
 2. The system stores the original text and statement metadata.
 3. The statement is analyzed using a versioned instruction/prompt.
-4. The AI model returns structured output.
-5. The raw model response is stored.
-6. A moderator reviews the result for obvious technical, factual, or structural issues.
-7. Approved analysis becomes visible on the public platform.
+4. The prompt template is assembled from `backend/app/services/ai_prompt_template.py`.
+5. Backend resource values, such as the target language, are read from `backend/app/resources.json`.
+6. The AI model returns structured output.
+7. The raw model response is stored.
+8. A moderator reviews the result for obvious technical, factual, or structural issues.
+9. Approved analysis becomes visible on the public platform.
 
 Raw prompt/instruction text and raw model responses should be preserved for auditability. Public statement detail pages can then show how a published analysis was produced, instead of presenting only final scores.
 
-## Internal moderation interface
+## Content and Localization
 
-The internal interface is for trusted administrators and moderators only.
+The project uses file-backed content/resources so that copy can be edited without rewriting business logic.
 
-Security notes:
+- Public UI strings: `frontend/src/resources.json`
+- Public resource accessor: `frontend/src/i18n/resources.ts`
+- Backend resources: `backend/app/resources.json`
+- Backend resource accessor: `backend/app/resources.py`
+- Methodology long-form content: `frontend/src/content/methodology.bg.md`
 
-- protect internal routes with authentication;
-- protect write APIs and mutation routes;
-- never expose admin credentials;
-- never commit secrets;
-- use environment variables or secret management for production configuration;
-- do not make internal tools accessible from the public web without authentication;
-- replace development credentials before deployment.
+Short UI strings should generally go into `resources.json`. Long public editorial content should remain in Markdown or another dedicated content file.
 
-## Environment variables
+## Umami Analytics and Diagnostics
+
+Umami is a lightweight, privacy-friendly web analytics application. In this repository it is not a FastAPI library and not a frontend package dependency. It runs as a separate Docker service with its own PostgreSQL database.
+
+The local Docker stack includes:
+
+- `umami` - the Umami analytics app, exposed at `http://localhost:3000`;
+- `umami-db` - PostgreSQL storage for Umami;
+- `backend` - embeds a configured shared Umami dashboard in the internal diagnostics panel;
+- `frontend` - optionally loads the Umami tracking script for the public app.
+
+### Purpose
+
+Umami is used for internal traffic diagnostics:
+
+- page views;
+- visited public routes;
+- referrers and basic traffic trends;
+- high-level usage patterns for the public app.
+
+The diagnostics panel is internal-only and is not linked in the public frontend.
+
+### Internal diagnostics panel
+
+The diagnostics panel is controlled by:
+
+```env
+DIAGNOSTICS_PANEL_ENABLED=true
+DIAGNOSTICS_PANEL_PATH=/diagnostics_panel
+DIAGNOSTICS_DASHBOARD_URL=http://localhost:3000/share/your-share-id
+```
+
+`DIAGNOSTICS_PANEL_ENABLED` only enables the page. `DIAGNOSTICS_DASHBOARD_URL` must be set to a real Umami Share URL before the panel can embed analytics.
+
+To create the Share URL:
+
+1. Open `http://localhost:3000`.
+2. Log into Umami.
+3. Add or open the website for the public app.
+4. Enable sharing for the dashboard/view you want to embed.
+5. Copy the generated Share URL into `DIAGNOSTICS_DASHBOARD_URL`.
+6. Restart the backend container.
+
+```bash
+docker compose up -d backend
+```
+
+### Public page tracking
+
+The public app already has automated tracking script injection through `frontend/src/components/layout/UmamiAnalytics.tsx`.
+
+Enable it with:
+
+```env
+NEXT_PUBLIC_UMAMI_ENABLED=true
+NEXT_PUBLIC_UMAMI_SCRIPT_URL=http://localhost:3000/script.js
+NEXT_PUBLIC_UMAMI_WEBSITE_ID=your-website-id
+```
+
+After changing these values, restart the frontend container:
+
+```bash
+docker compose up -d frontend
+```
+
+Once enabled, `PublicLayout` renders the Umami script on every public route. Umami automatically tracks page views and single-page-app navigations, so the project does not need per-page tracking code for normal route views.
+
+The only part that is not currently fully automated is creating the Umami website and Share URL, because those IDs are generated inside Umami. After those values are copied into `.env`, tracking and diagnostics embedding are automatic on container restart.
+
+Useful local URLs:
+
+- Umami app: `http://localhost:3000`
+- Public frontend: `http://localhost:5173`
+- Diagnostics panel: `http://localhost:8000/diagnostics_panel`
+
+Official Umami references:
+
+- [Install Umami](https://docs.umami.is/docs/install)
+- [Collect data](https://docs.umami.is/docs/collect-data)
+- [Tracker configuration](https://docs.umami.is/docs/tracker-configuration)
+- [Enable Share URL](https://docs.umami.is/docs/enable-share-url)
+
+## Environment Variables
 
 The repository includes `.env.example`. Current variables include:
+
+### Core backend
 
 - `DATABASE_URL`
 - `REDIS_URL`
@@ -101,12 +224,29 @@ The repository includes `.env.example`. Current variables include:
 - `BACKEND_BASE_URL`
 - `MEDIA_STORAGE_PATH`
 - `CORS_ALLOWED_ORIGINS`
+
+### Frontend
+
 - `VITE_API_BASE_URL`
 - `VITE_PUBLIC_BASE_URL`
 
-Do not commit real secrets. Internal moderation credentials, AI API keys, and write-access configuration should be stored securely.
+### Umami
 
-## Local development
+- `UMAMI_DATABASE_PASSWORD`
+- `UMAMI_APP_SECRET`
+- `NEXT_PUBLIC_UMAMI_ENABLED`
+- `NEXT_PUBLIC_UMAMI_SCRIPT_URL`
+- `NEXT_PUBLIC_UMAMI_WEBSITE_ID`
+
+### Diagnostics
+
+- `DIAGNOSTICS_PANEL_ENABLED`
+- `DIAGNOSTICS_PANEL_PATH`
+- `DIAGNOSTICS_DASHBOARD_URL`
+
+Do not commit real secrets. Internal moderation credentials, AI API keys, analytics secrets, and write-access configuration should be stored securely.
+
+## Local Development
 
 From the repository root:
 
@@ -120,6 +260,8 @@ Local services:
 - Backend API: `http://localhost:8000`
 - Public frontend: `http://localhost:5173`
 - Internal app: `http://localhost:8000/internal`
+- Umami: `http://localhost:3000`
+- Diagnostics panel: `http://localhost:8000/diagnostics_panel`
 
 Frontend commands from `frontend/`:
 
@@ -139,7 +281,7 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 The backend package targets Python 3.12 or newer.
 
-## Build and deployment
+## Build and Deployment
 
 The frontend production build is:
 
@@ -149,9 +291,39 @@ npm run build
 
 The backend Dockerfile runs Alembic migrations and starts Uvicorn. The local Docker Compose stack is suitable for development, not a complete production deployment plan.
 
-Deployment assumptions are still evolving. Production deployments should explicitly configure secrets, database access, Redis access, CORS origins, media storage, internal route exposure, logging, and backups.
+Production deployments should explicitly configure:
 
-## Documentation links
+- secret management;
+- database access and backups;
+- Redis access;
+- CORS origins;
+- media storage;
+- internal route exposure;
+- analytics/diagnostics exposure;
+- logging and monitoring;
+- HTTPS and proxy headers.
+
+For production analytics, use a production Umami instance and update:
+
+```env
+NEXT_PUBLIC_UMAMI_SCRIPT_URL=https://your-umami-domain.example.com/script.js
+DIAGNOSTICS_DASHBOARD_URL=https://your-umami-domain.example.com/share/your-share-id
+```
+
+## Security Notes
+
+- Protect internal routes with authentication.
+- Keep diagnostics internal and root-admin-only.
+- Protect write APIs and mutation routes.
+- Never expose admin credentials.
+- Never commit secrets.
+- Replace development credentials before deployment.
+- Use environment variables or secret management for production configuration.
+- Do not make internal tools accessible from the public web without authentication.
+- Review analytics configuration before production use, especially if Share URLs are publicly reachable.
+
+## Documentation Links
 
 - [Root README](../README.md)
 - [Methodology rationale](./METHODOLOGY.md)
+- [Public methodology content](../frontend/src/content/methodology.bg.md)

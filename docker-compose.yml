@@ -19,6 +19,33 @@ services:
     volumes:
       - redis_data:/data
 
+  umami-db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: ${UMAMI_DATABASE_PASSWORD:-umami}
+    volumes:
+      - umami_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U umami -d umami"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    environment:
+      DATABASE_URL: postgresql://umami:${UMAMI_DATABASE_PASSWORD:-umami}@umami-db:5432/umami
+      APP_SECRET: ${UMAMI_APP_SECRET:-change-this-local-umami-secret}
+    ports:
+      - "3000:3000"
+    depends_on:
+      umami-db:
+        condition: service_healthy
+    restart: unless-stopped
+
   backend:
     build: ./backend
     command: sh -c "alembic upgrade head && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
@@ -35,9 +62,9 @@ services:
       BACKEND_BASE_URL: http://localhost:8000
       MEDIA_STORAGE_PATH: ./media
       CORS_ALLOWED_ORIGINS: http://localhost:5173
-      DIAGNOSTICS_PANEL_ENABLED: "false"
-      DIAGNOSTICS_PANEL_PATH: /diagnostics_panel
-      DIAGNOSTICS_DASHBOARD_URL: ""
+      DIAGNOSTICS_PANEL_ENABLED: ${DIAGNOSTICS_PANEL_ENABLED:-false}
+      DIAGNOSTICS_PANEL_PATH: ${DIAGNOSTICS_PANEL_PATH:-/diagnostics_panel}
+      DIAGNOSTICS_DASHBOARD_URL: ${DIAGNOSTICS_DASHBOARD_URL:-}
     ports:
       - "8000:8000"
     depends_on:
@@ -56,9 +83,9 @@ services:
     environment:
       VITE_API_BASE_URL: http://localhost:8000/api
       VITE_PUBLIC_BASE_URL: http://localhost:5173
-      NEXT_PUBLIC_UMAMI_ENABLED: "false"
-      NEXT_PUBLIC_UMAMI_SCRIPT_URL: ""
-      NEXT_PUBLIC_UMAMI_WEBSITE_ID: ""
+      NEXT_PUBLIC_UMAMI_ENABLED: ${NEXT_PUBLIC_UMAMI_ENABLED:-false}
+      NEXT_PUBLIC_UMAMI_SCRIPT_URL: ${NEXT_PUBLIC_UMAMI_SCRIPT_URL:-}
+      NEXT_PUBLIC_UMAMI_WEBSITE_ID: ${NEXT_PUBLIC_UMAMI_WEBSITE_ID:-}
     ports:
       - "5173:5173"
     depends_on:
@@ -74,3 +101,4 @@ volumes:
   postgres_data:
   redis_data:
   media_data:
+  umami_db_data:
