@@ -39,6 +39,7 @@ services:
     environment:
       DATABASE_URL: postgresql://umami:${UMAMI_DATABASE_PASSWORD:-umami}@umami-db:5432/umami
       APP_SECRET: ${UMAMI_APP_SECRET:-change-this-local-umami-secret}
+      ALLOWED_FRAME_URLS: ${UMAMI_ALLOWED_FRAME_URLS:-http://localhost:8000}
     ports:
       - "3000:3000"
     depends_on:
