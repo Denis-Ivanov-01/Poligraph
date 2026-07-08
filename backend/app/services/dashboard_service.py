@@ -5,6 +5,7 @@ from app.models.ai_analysis import AiAnalysis
 from app.models.political_party import PoliticalParty
 from app.models.politician import Politician
 from app.models.statement import Statement
+from app.services.commitment_service import active_government_program_summary
 
 
 def dashboard_data(db: Session) -> dict:
@@ -104,4 +105,5 @@ def dashboard_data(db: Session) -> dict:
             }
             for item in top_parties
         ],
+        "active_government_program_summary": active_government_program_summary(db),
     }

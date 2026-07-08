@@ -15,6 +15,7 @@ class Statement(Base):
     source_type: Mapped[str] = mapped_column(String(80))
     source_url: Mapped[str | None] = mapped_column(String(500))
     original_text: Mapped[str] = mapped_column(Text)
+    generated_prompt_text: Mapped[str | None] = mapped_column(Text)
     statement_date: Mapped[date | None] = mapped_column(Date)
     politician_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("politicians.id"))
     party_at_statement_time_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("political_parties.id"))

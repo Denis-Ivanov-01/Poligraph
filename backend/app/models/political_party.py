@@ -19,3 +19,5 @@ class PoliticalParty(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     memberships = relationship("PartyMembership", back_populates="party")
+    programs = relationship("Program", back_populates="related_party")
+    commitments = relationship("Commitment", back_populates="related_party")

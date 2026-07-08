@@ -1,0 +1,23 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>Edit evidence</h2>
+<p class="muted">For commitment: {{ commitment.title }}</p>
+<form method="post" action="/internal/programs/commitments/{{ commitment.id }}/evidence/{{ evidence.id }}/edit" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Title <input name="title" value="{{ evidence.title }}" required></label>
+  <label>URL <input name="url" value="{{ evidence.url if evidence.url else '' }}"></label>
+  <label>Source type
+    <select name="source_type">
+      {% for key, label in evidence_source_types.items() %}
+        <option value="{{ key }}" {% if evidence.source_type == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Publisher <input name="publisher" value="{{ evidence.publisher if evidence.publisher else '' }}"></label>
+  <label>Published date <input type="date" name="published_at" value="{{ evidence.published_at if evidence.published_at else '' }}"></label>
+  <label>Relevant excerpt <textarea name="quote_or_relevant_excerpt">{{ evidence.quote_or_relevant_excerpt if evidence.quote_or_relevant_excerpt else '' }}</textarea></label>
+  <label>Description <textarea name="description">{{ evidence.description if evidence.description else '' }}</textarea></label>
+  <label class="checkbox-row"><input type="checkbox" name="supports_status" value="1" {% if evidence.supports_status %}checked{% endif %}> Supports current status</label>
+  <button type="submit">Save evidence</button>
+</form>
+{% endblock %}

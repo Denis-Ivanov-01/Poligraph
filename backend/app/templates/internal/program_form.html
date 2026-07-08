@@ -1,0 +1,51 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>{{ form_title }}</h2>
+{% if form_note %}<p class="muted">{{ form_note }}</p>{% endif %}
+<form method="post" action="{{ form_action }}" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Title <input name="title" value="{{ program.title if program else '' }}" required></label>
+  <label>Slug <input name="slug" value="{{ program.slug if program else '' }}"></label>
+  <label>Description <textarea name="description">{{ program.description if program and program.description else '' }}</textarea></label>
+  <label>Program type
+    <select name="program_type">
+      {% for key, label in program_types.items() %}
+        <option value="{{ key }}" {% if program and program.program_type == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Political subject <input name="political_subject_name" value="{{ program.political_subject_name if program else '' }}" required></label>
+  <p class="muted">The political actor responsible for the program or commitments, for example a party, coalition, government, ministry, or named political subject.</p>
+  <label>Related party
+    <select name="related_party_id">
+      <option value="">None</option>
+      {% for party in parties %}
+        <option value="{{ party.id }}" {% if program and program.related_party_id == party.id %}selected{% endif %}>{{ party.full_name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Coalition name <input name="related_coalition_name" value="{{ program.related_coalition_name if program and program.related_coalition_name else '' }}"></label>
+  <label>Period start <input type="date" name="period_start" value="{{ program.period_start if program and program.period_start else '' }}"></label>
+  <label>Period end <input type="date" name="period_end" value="{{ program.period_end if program and program.period_end else '' }}"></label>
+  <label>Source URL <input name="source_url" value="{{ program.source_url if program and program.source_url else '' }}"></label>
+  <label>Source title <input name="source_title" value="{{ program.source_title if program and program.source_title else '' }}"></label>
+  <label>Source description or pasted program text <textarea name="source_description" rows="10">{{ program.source_description if program and program.source_description else '' }}</textarea></label>
+  {% if program %}
+    <section class="panel">
+      <h3>AI prompt and response</h3>
+      <p class="muted">Editing the JSON response replaces the imported commitments for this program.</p>
+      <label>Generated prompt
+        <textarea name="generated_prompt_text" rows="16">{{ program.generated_prompt_text or '' }}</textarea>
+      </label>
+      <label>Raw AI JSON response
+        <textarea name="raw_ai_response" rows="18">{{ program.raw_ai_response or '' }}</textarea>
+      </label>
+    </section>
+  {% endif %}
+  <label class="checkbox-row"><input type="checkbox" name="is_active_government_program" value="1" {% if program and program.is_active_government_program %}checked{% endif %}> Active government program</label>
+  {% if show_publish_controls %}
+    <label class="checkbox-row"><input type="checkbox" name="is_published" value="1" {% if program and program.is_published %}checked{% endif %}> Published</label>
+  {% endif %}
+  <button type="submit">{{ submit_label or "Save" }}</button>
+</form>
+{% endblock %}

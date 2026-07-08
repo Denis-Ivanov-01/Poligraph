@@ -1,0 +1,38 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>Commitments</h2>
+<p><a href="/internal/programs/commitments/new">New commitment</a></p>
+<form method="get" action="/internal/programs/commitments" class="stack compact-form">
+  <label>Program
+    <select name="program_id">
+      <option value="">All</option>
+      {% for program in programs %}
+        <option value="{{ program.id }}" {% if selected_program_id == program.id|string %}selected{% endif %}>{{ program.title }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Status
+    <select name="status">
+      <option value="">All</option>
+      {% for key, meta in statuses.items() %}
+        <option value="{{ key }}" {% if selected_status == key %}selected{% endif %}>{{ meta.label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Topic <input name="topic" value="{{ topic }}"></label>
+  <button type="submit">Filter</button>
+</form>
+<table>
+  <tr><th>Title</th><th>Program</th><th>Topic</th><th>Status</th><th>Published</th><th>Actions</th></tr>
+  {% for commitment in commitments %}
+    <tr>
+      <td>{{ commitment.title }}</td>
+      <td>{{ commitment.program.title }}</td>
+      <td>{{ commitment.topic or "None" }}</td>
+      <td>{{ statuses[commitment.status].label if commitment.status in statuses else commitment.status }}</td>
+      <td>{% if commitment.is_published %}Yes{% else %}No{% endif %}</td>
+      <td><a href="/internal/programs/commitments/{{ commitment.id }}/edit">Edit</a></td>
+    </tr>
+  {% endfor %}
+</table>
+{% endblock %}

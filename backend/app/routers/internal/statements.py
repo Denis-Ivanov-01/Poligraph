@@ -13,7 +13,9 @@ from app.models.politician import Politician
 from app.models.statement import Statement
 from app.routers.internal.utils import render
 from app.security import validate_csrf
+from app.services.ai_json_validation_service import validate_ai_json
 from app.services.audit_service import write_audit_log
+from app.services.statement_analysis_service import apply_statement_ai_analysis
 
 router = APIRouter(prefix="/internal/statements", tags=["internal-statements"])
 
@@ -22,7 +24,7 @@ def statements_query():
     return (
         select(Statement)
         .where(Statement.is_deleted.is_(False))
-        .options(selectinload(Statement.politician), selectinload(Statement.party_at_statement_time))
+        .options(selectinload(Statement.politician), selectinload(Statement.party_at_statement_time), selectinload(Statement.ai_analysis))
         .order_by(Statement.created_at.desc())
     )
 
@@ -64,6 +66,8 @@ def create_statement(
     politician_id: str = Form(...),
     party_at_statement_time_id: str = Form(""),
     internal_notes: str = Form(""),
+    generated_prompt_text: str = Form(""),
+    raw_ai_response: str = Form(""),
     csrf_token: str = Form(...),
     user: dict = Depends(current_internal_user),
     db: Session = Depends(get_db),
@@ -135,6 +139,26 @@ def update_statement(
     statement.politician_id = politician_id
     statement.party_at_statement_time_id = party_at_statement_time_id or None
     statement.internal_notes = internal_notes or None
+    statement.generated_prompt_text = generated_prompt_text or None
+    if statement.ai_analysis and generated_prompt_text:
+        statement.ai_analysis.prompt_text = generated_prompt_text
+    if raw_ai_response.strip():
+        try:
+            data = validate_ai_json(raw_ai_response)
+        except ValueError as exc:
+            context = {
+                "user": user,
+                "statement": statement,
+                "form_title": "Edit statement",
+                "form_note": "Update the draft or published statement fields.",
+                "form_action": f"/internal/statements/{statement_id}/edit",
+                "submit_label": "Save changes",
+                "error": str(exc),
+            }
+            context.update(statement_form_options(db))
+            return render(request, "internal/statement_form.html", context, status_code=400)
+        analysis = apply_statement_ai_analysis(statement, data, raw_ai_response, generated_prompt_text or statement.generated_prompt_text or "")
+        db.add(analysis)
     db.commit()
     write_audit_log(db, request, user, "update_statement", "statement", str(statement.id), {"title": statement.title})
     return RedirectResponse("/internal/statements", status_code=303)

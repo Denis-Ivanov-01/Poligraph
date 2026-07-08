@@ -1,0 +1,38 @@
+﻿{% extends "internal/base.html" %}
+{% block content %}
+<h2>Programs</h2>
+<p>
+  <a href="/internal/programs/new">New program</a>
+</p>
+<table>
+  <tr><th>Title</th><th>Type</th><th>Subject</th><th>Status</th><th>Actions</th></tr>
+  {% for program in programs %}
+    <tr>
+      <td>{{ program.title }}</td>
+      <td>{{ program_types[program.program_type] if program_types and program.program_type in program_types else program.program_type }}</td>
+      <td>{{ program.political_subject_name }}</td>
+      <td>
+        {% if program.is_published %}Published{% else %}Draft{% endif %}
+        {% if program.is_active_government_program %} - Active government program{% endif %}
+      </td>
+      <td>
+        <a href="/internal/programs/{{ program.id }}/edit">Edit</a>
+        <a href="/internal/programs/{{ program.id }}/prompt">Prompt</a>
+        <a href="/internal/programs/{{ program.id }}/preview">Preview</a>
+        {% if program.is_published %}
+          <form method="post" action="/internal/programs/{{ program.id }}/unpublish" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit">Unpublish</button>
+          </form>
+        {% endif %}
+        {% if session.role == "root_admin" %}
+          <form method="post" action="/internal/programs/{{ program.id }}/delete" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit">Delete</button>
+          </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+</table>
+{% endblock %}

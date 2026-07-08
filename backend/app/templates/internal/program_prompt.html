@@ -1,0 +1,11 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>New program - step 2 of 4: generated AI prompt</h2>
+<p class="muted">Review, edit, and copy this prompt into a Deep Research-capable model. Saving it updates the stored prompt for this program.</p>
+<h3>{{ program.title }}</h3>
+<form method="post" action="/internal/programs/{{ program.id }}/prompt" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <textarea name="prompt_text" rows="24" required>{{ prompt }}</textarea>
+  <button type="submit">Next</button>
+</form>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>New program - step 4 of 4: preview and publish</h2>
+<p class="muted">Review the imported commitments. You can edit individual commitments before publishing if needed.</p>
+<section class="panel">
+  <h3>{{ program.title }}</h3>
+  <p><strong>Subject:</strong> {{ program.political_subject_name }}</p>
+  <p><strong>Type:</strong> {{ program.program_type }}</p>
+  {% if program.source_url %}<p><strong>Source:</strong> <a href="{{ program.source_url }}" target="_blank" rel="noopener noreferrer">{{ program.source_url }}</a></p>{% endif %}
+</section>
+<table>
+  <tr><th>Title</th><th>Topic</th><th>Status</th><th>Confidence</th><th>Evidence</th><th>Actions</th></tr>
+  {% for commitment in commitments %}
+    <tr>
+      <td>{{ commitment.title }}</td>
+      <td>{{ commitment.topic or "None" }}</td>
+      <td>{{ statuses[commitment.status].label if commitment.status in statuses else commitment.status }}</td>
+      <td>{{ confidence_levels[commitment.confidence_level] if commitment.confidence_level in confidence_levels else commitment.confidence_level }}</td>
+      <td>{{ commitment.evidence|length }}</td>
+      <td><a href="/internal/programs/commitments/{{ commitment.id }}/edit">Edit</a></td>
+    </tr>
+  {% endfor %}
+</table>
+<form method="post" action="/internal/programs/{{ program.id }}/publish" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <button type="submit">Publish program and commitments</button>
+</form>
+{% endblock %}

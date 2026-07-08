@@ -22,3 +22,4 @@ class DashboardResponse(BaseModel):
     latest_statements: list[StatementListItem]
     top_politicians: list[DashboardRankingItem]
     top_parties: list[DashboardRankingItem]
+    active_government_program_summary: dict | None = None

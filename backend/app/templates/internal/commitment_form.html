@@ -1,0 +1,99 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>{{ form_title }}</h2>
+{% if commitment and commitment.program_id %}
+  <p><a href="/internal/programs/{{ commitment.program_id }}/preview">Back to program preview</a></p>
+{% endif %}
+<form method="post" action="{{ form_action }}" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Program
+    <select name="program_id" required>
+      {% for program in programs %}
+        <option value="{{ program.id }}" {% if commitment and commitment.program_id == program.id %}selected{% endif %}>{{ program.title }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Title <input name="title" value="{{ commitment.title if commitment else '' }}" required></label>
+  <label>Slug <input name="slug" value="{{ commitment.slug if commitment else '' }}"></label>
+  <label>Original text <textarea name="original_text" required>{{ commitment.original_text if commitment else '' }}</textarea></label>
+  <label>Normalized description <textarea name="normalized_description">{{ commitment.normalized_description if commitment and commitment.normalized_description else '' }}</textarea></label>
+  <label>Political subject <input name="political_subject_name" value="{{ commitment.political_subject_name if commitment and commitment.political_subject_name else '' }}"></label>
+  <label>Related party
+    <select name="related_party_id">
+      <option value="">None</option>
+      {% for party in parties %}
+        <option value="{{ party.id }}" {% if commitment and commitment.related_party_id == party.id %}selected{% endif %}>{{ party.full_name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Coalition name <input name="related_coalition_name" value="{{ commitment.related_coalition_name if commitment and commitment.related_coalition_name else '' }}"></label>
+  <label>Topic <input name="topic" value="{{ commitment.topic if commitment and commitment.topic else '' }}"></label>
+  <label>Responsible institutions <textarea name="responsible_institutions">{{ commitment.responsible_institutions if commitment and commitment.responsible_institutions else '' }}</textarea></label>
+  <label>Period <input name="period" value="{{ commitment.period if commitment and commitment.period else '' }}"></label>
+  <label>Deadline <input type="date" name="deadline" value="{{ commitment.deadline if commitment and commitment.deadline else '' }}"></label>
+  <label>Measurable criteria <textarea name="measurable_criteria">{{ commitment.measurable_criteria if commitment and commitment.measurable_criteria else '' }}</textarea></label>
+  <label>Status
+    <select name="status">
+      {% for key, meta in statuses.items() %}
+        <option value="{{ key }}" {% if commitment and commitment.status == key %}selected{% endif %}>{{ meta.label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Status explanation <textarea name="status_explanation">{{ commitment.status_explanation if commitment and commitment.status_explanation else '' }}</textarea></label>
+  <label>Confidence
+    <select name="confidence_level">
+      {% for key, label in confidence_levels.items() %}
+        <option value="{{ key }}" {% if commitment and commitment.confidence_level == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Confidence explanation <textarea name="confidence_explanation">{{ commitment.confidence_explanation if commitment and commitment.confidence_explanation else '' }}</textarea></label>
+  <label>Last status update <input type="date" name="last_status_update" value="{{ commitment.last_status_update if commitment and commitment.last_status_update else '' }}"></label>
+  <label>Display order <input type="number" name="display_order" value="{{ commitment.display_order if commitment else 0 }}"></label>
+  <label class="checkbox-row"><input type="checkbox" name="is_key_commitment" value="1" {% if commitment and commitment.is_key_commitment %}checked{% endif %}> Key commitment</label>
+  <label class="checkbox-row"><input type="checkbox" name="is_published" value="1" {% if commitment and commitment.is_published %}checked{% endif %}> Published</label>
+  <button type="submit">Save</button>
+</form>
+
+{% if commitment %}
+  <section class="panel">
+    <h3>Evidence</h3>
+    <table>
+      <tr><th>Title</th><th>Type</th><th>Publisher</th><th>Actions</th></tr>
+      {% for item in commitment.evidence %}
+        <tr>
+          <td>{% if item.url %}<a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>{% else %}{{ item.title }}{% endif %}</td>
+          <td>{{ evidence_source_types[item.source_type] if item.source_type in evidence_source_types else item.source_type }}</td>
+          <td>{{ item.publisher or "None" }}</td>
+          <td>
+            <a href="/internal/programs/commitments/{{ commitment.id }}/evidence/{{ item.id }}/edit">Edit</a>
+            <form method="post" action="/internal/programs/commitments/{{ commitment.id }}/evidence/{{ item.id }}/delete" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button type="submit">Delete</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+    </table>
+    <h4>Add evidence</h4>
+    <form method="post" action="/internal/programs/commitments/{{ commitment.id }}/evidence" class="stack">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Title <input name="title" required></label>
+      <label>URL <input name="url"></label>
+      <label>Source type
+        <select name="source_type">
+          {% for key, label in evidence_source_types.items() %}
+            <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Publisher <input name="publisher"></label>
+      <label>Published date <input type="date" name="published_at"></label>
+      <label>Relevant excerpt <textarea name="quote_or_relevant_excerpt"></textarea></label>
+      <label>Description <textarea name="description"></textarea></label>
+      <label class="checkbox-row"><input type="checkbox" name="supports_status" value="1" checked> Supports current status</label>
+      <button type="submit">Add evidence</button>
+    </form>
+  </section>
+{% endif %}
+{% endblock %}

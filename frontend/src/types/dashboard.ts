@@ -1,4 +1,5 @@
 import type { StatementListItem } from "./statement";
+import type { ActiveGovernmentProgramSummary } from "./program";
 
 export type DashboardRankingItem = {
   id: string;
@@ -17,4 +18,5 @@ export type Dashboard = {
   latest_statements: StatementListItem[];
   top_politicians: DashboardRankingItem[];
   top_parties: DashboardRankingItem[];
+  active_government_program_summary?: ActiveGovernmentProgramSummary | null;
 };

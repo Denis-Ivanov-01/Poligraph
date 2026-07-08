@@ -1,0 +1,11 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>New program - step 3 of 4: paste AI JSON</h2>
+<p class="muted">Paste the valid JSON returned by the model. Imported commitments remain unpublished until the final publish step.</p>
+<h3>{{ program.title }}</h3>
+<form method="post" action="/internal/programs/{{ program.id }}/ai-json" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <textarea name="raw_json" rows="24" required>{{ raw_json or "" }}</textarea>
+  <button type="submit">Next</button>
+</form>
+{% endblock %}

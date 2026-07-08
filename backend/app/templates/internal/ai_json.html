@@ -5,7 +5,7 @@
 <h3>{{ statement.title or "Untitled statement" }}</h3>
 <form method="post" action="/internal/statements/{{ statement.id }}/ai-json" class="stack">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-  <textarea name="raw_json" rows="24" required>{{ raw_json or "" }}</textarea>
+  <textarea name="raw_json" rows="24" required>{{ raw_json or (statement.ai_analysis.raw_ai_response if statement.ai_analysis else "") }}</textarea>
   <button type="submit">Validate and save</button>
 </form>
 {% endblock %}

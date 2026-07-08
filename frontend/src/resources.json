@@ -9,6 +9,7 @@
     "parties": "Партии",
     "politicians": "Политици",
     "statements": "Изказвания",
+    "programs": "Програми и ангажименти",
     "dashboard": "Табло",
     "methodology": "За метода",
     "search": "Търсене"
@@ -119,6 +120,11 @@
     "finalCtaEyebrow": "Започни от данните",
     "finalCtaTitle": "Разгледай последните изказвания, класациите или начина на оценяване.",
     "emptyDashboard": "Няма налични данни за таблото.",
+    "commitmentsTitle": "Ангажименти на текущото управление",
+    "commitmentsQuestion": "Какво е обещано и какъв е реалният статус на изпълнение?",
+    "totalCommitments": "ангажимента",
+    "noActiveGovernmentProgram": "Все още няма въведена активна управленска програма.",
+    "noKeyCommitments": "Все още няма маркирани ключови ангажименти.",
     "publishedStatements": "Публикувани изказвания",
     "politicians": "Политици",
     "parties": "Партии",
@@ -168,6 +174,58 @@
     "unknownStart": "Неизвестно начало",
     "present": "До момента",
     "membershipDates": "{start} – {end}"
+  },
+  "programs": {
+    "eyebrow": "От думи към действия",
+    "title": "Програми и ангажименти",
+    "subtitle": "Този раздел проследява какво е обещано в политически програми и какъв е реалният статус на изпълнение.",
+    "activeGovernmentProgram": "Активна управленска програма",
+    "statusSummary": "Обобщение по статуси",
+    "viewAll": "Виж всички ангажименти",
+    "openDetails": "Детайли",
+    "backToPrograms": "Към програмите",
+    "evidenceShort": "източника",
+    "topic": "Тема",
+    "deadline": "Срок или период",
+    "lastUpdated": "Последна актуализация",
+    "evidenceCount": "Брой източници",
+    "normalizedDescription": "Нормализирано описание",
+    "originalText": "Оригинален текст",
+    "statusAndConfidence": "Статус и увереност",
+    "measurableCriteria": "Измерим критерий",
+    "responsibleInstitutions": "Отговорни институции",
+    "evidence": "Доказателства и източници",
+    "emptyCommitments": "Все още няма публикувани ангажименти.",
+    "emptyEvidence": "Все още няма публикувани източници към този ангажимент.",
+    "commitmentNotFound": "Ангажиментът не е намерен.",
+    "filters": {
+      "status": "Статус",
+      "topic": "Тема",
+      "program": "Програма",
+      "all": "Всички",
+      "keyOnly": "Само ключови ангажименти"
+    },
+    "statuses": {
+      "not_started": "Не започнато",
+      "in_progress": "В процес",
+      "partially_fulfilled": "Частично изпълнено",
+      "fulfilled": "Изпълнено",
+      "broken": "Нарушено",
+      "abandoned": "Изоставено",
+      "blocked": "Блокирано",
+      "insufficient_data": "Няма достатъчно данни"
+    },
+    "statusGroups": {
+      "active": "Активни",
+      "completed": "Завършени",
+      "unclear": "Неясни"
+    },
+    "confidence": {
+      "high": "Висока увереност",
+      "medium": "Средна увереност",
+      "low": "Ниска увереност",
+      "insufficient_data": "Недостатъчно данни"
+    }
   },
   "search": {
     "title": "Търсене",

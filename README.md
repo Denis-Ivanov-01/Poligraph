@@ -11,6 +11,20 @@ The platform evaluates specific political statements, not politicians as people 
 
 The goal is to make political speech more inspectable. It is not to tell people who to vote for.
 
+## TODOs
+From system standpoint:
+- Implement advanced moderator rights restriction - mods must be able to edit only their posts, to be assigned only some politicians, parties, etc.
+- Moderator actions must be reversible by the administrator
+- Add contacts page and github repo link in the home page
+- All accessible from the UI methods for import/deleting/other actions must be easily accessible from REST to enable future automation.
+- All endpoints must be protected by credentials to enable ease of future autiomation while maintaning security.
+- All credentials-related stuff must be encrypted.
+
+From AI workflow standpoint:
+- The political program workflow should support: AI-generated JSON with summaries for all the commitments. Then there should be a dedicated page for each commitment. There must be an option for multiple commitments to be imported all at once.
+- For all entities that have forms for filling out, at the bottom there must be an input box for JSONs so even this can be easily automated.
+
+
 ## Why this project exists
 
 Political speech often reaches people as a mix of facts, arguments, promises, accusations, framing, and selective context. A statement can contain accurate facts but still lead to a weak conclusion. It can sound confident while leaving out context that matters. It can also be consistent with a politician's earlier position, or quietly depart from it.

@@ -10,6 +10,7 @@ import { ScoreBadge } from "../components/common/ScoreBadge";
 import { StatementCard } from "../components/statements/StatementCard";
 import { scoreLabels } from "../components/statements/ScorePanel";
 import type { Dashboard, DashboardRankingItem } from "../types/dashboard";
+import type { ActiveGovernmentProgramSummary } from "../types/program";
 import type { StatementListItem } from "../types/statement";
 import { statementDisplayTitle } from "../utils/statements";
 import { useAsync } from "../utils/useAsync";
@@ -197,6 +198,66 @@ function HomeLatestStatements({ statements }: { statements: StatementListItem[] 
   );
 }
 
+function HomeCommitmentsSummary({ summary }: { summary?: ActiveGovernmentProgramSummary | null }) {
+  const counts = summary?.status_counts;
+  const countItems = [
+    ["fulfilled", text.programs.statuses.fulfilled],
+    ["in_progress", text.programs.statuses.in_progress],
+    ["partially_fulfilled", text.programs.statuses.partially_fulfilled],
+    ["broken", text.programs.statuses.broken],
+    ["not_started", text.programs.statuses.not_started],
+    ["insufficient_data", text.programs.statuses.insufficient_data],
+    ["blocked", text.programs.statuses.blocked],
+    ["abandoned", text.programs.statuses.abandoned]
+  ];
+
+  return (
+    <section className="home-section">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">{text.programs.eyebrow}</p>
+          <h2>{text.home.commitmentsTitle}</h2>
+        </div>
+        <Link to="/programs">{text.programs.viewAll}</Link>
+      </div>
+      {!summary ? (
+        <EmptyState message={text.home.noActiveGovernmentProgram} />
+      ) : (
+        <div className="home-commitments-panel">
+          <div className="home-commitments-intro">
+            <p className="eyebrow">{summary.program.title}</p>
+            <h3>{text.home.commitmentsQuestion}</h3>
+            <p>{text.programs.subtitle}</p>
+            <strong>{summary.total_commitments} {text.home.totalCommitments}</strong>
+          </div>
+          <div className="home-commitments-counts">
+            {countItems.map(([key, label]) => (
+              <div key={key}>
+                <span>{counts?.[key] ?? 0}</span>
+                <small>{label}</small>
+              </div>
+            ))}
+          </div>
+          {summary.key_commitments.length ? (
+            <ul className="home-commitments-list">
+              {summary.key_commitments.map((commitment) => (
+                <li key={commitment.id}>
+                  <Link to={`/programs/commitments/${commitment.slug}`}>
+                    <strong>{commitment.title}</strong>
+                    <span className={`status-badge status-${commitment.status}`}>{commitment.status_label}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <EmptyState message={text.home.noKeyCommitments} />
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function HomePurposePlaceholder() {
   return (
     <section className="home-editorial-panel">
@@ -327,6 +388,7 @@ export function HomePage() {
       <HomeNavigationCards />
       <HomeRankings data={data} />
       <HomeLatestStatements statements={data.latest_statements} />
+      <HomeCommitmentsSummary summary={data.active_government_program_summary} />
       <HomePurposePlaceholder />
       <HomeMethodologyPreview />
       <HomeNotEvaluatedPlaceholder />

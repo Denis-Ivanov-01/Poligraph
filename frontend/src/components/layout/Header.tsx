@@ -13,6 +13,7 @@ export function Header() {
           <NavLink to="/parties">{text.nav.parties}</NavLink>
           <NavLink to="/politicians">{text.nav.politicians}</NavLink>
           <NavLink to="/statements">{text.nav.statements}</NavLink>
+          <NavLink to="/programs">{text.nav.programs}</NavLink>
           <NavLink to="/dashboard">{text.nav.dashboard}</NavLink>
           <NavLink to="/methodology">{text.nav.methodology}</NavLink>
           <NavLink to="/search">{text.nav.search}</NavLink>
