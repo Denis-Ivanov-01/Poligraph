@@ -25,13 +25,19 @@ def moderators(request: Request, user: dict = Depends(root_admin_required), db: 
 def create_moderator(
     request: Request,
     username: str = Form(...),
+    email: str = Form(""),
     password: str = Form(...),
     csrf_token: str = Form(...),
     user: dict = Depends(root_admin_required),
     db: Session = Depends(get_db),
 ):
     validate_csrf(request, csrf_token)
-    moderator = Moderator(username=username, password_hash=hash_password(password))
+    moderator = Moderator(
+        username=username,
+        email=email.strip() or f"{username}@local.invalid",
+        password_hash=hash_password(password),
+        global_role="moderator",
+    )
     db.add(moderator)
     db.commit()
     write_audit_log(db, request, user, "create_moderator", "moderator", str(moderator.id), {"username": username})

@@ -17,6 +17,7 @@ class PoliticalParty(Base):
     description: Mapped[str | None] = mapped_column(Text)
     is_deleted: Mapped[bool] = mapped_column(default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     memberships = relationship("PartyMembership", back_populates="party")
     programs = relationship("Program", back_populates="related_party")

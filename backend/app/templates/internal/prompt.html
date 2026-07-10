@@ -1,11 +1,11 @@
 {% extends "internal/base.html" %}
 {% block content %}
-<h2>New statement - step 2 of 3: generated AI prompt</h2>
-<p class="muted">Review, edit, and copy this generated prompt. Saving it updates the stored prompt used for this statement.</p>
+<h2>Statement AI workflow - generated prompt</h2>
+<p class="muted">Copy this prompt into an external AI model manually. The backend stores the prompt in an AI run; no direct AI API call is made.</p>
 <h3>{{ statement.title or "Untitled statement" }}</h3>
 <form method="post" action="/internal/statements/{{ statement.id }}/prompt" class="stack">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
   <textarea name="prompt_text" rows="24" required>{{ prompt }}</textarea>
-  <button type="submit">Next</button>
+  <button type="submit">Save prompt and paste AI JSON</button>
 </form>
 {% endblock %}

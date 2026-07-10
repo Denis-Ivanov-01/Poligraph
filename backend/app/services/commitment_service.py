@@ -222,7 +222,7 @@ def commitment_query():
     return select(Commitment).options(
         selectinload(Commitment.program).selectinload(Program.related_party),
         selectinload(Commitment.related_party),
-        selectinload(Commitment.evidence),
+        selectinload(Commitment.evidence_links).selectinload(CommitmentEvidence.evidence_item),
     )
 
 

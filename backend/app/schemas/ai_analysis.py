@@ -4,11 +4,11 @@ from pydantic import BaseModel, Field
 
 
 class AiScores(BaseModel):
-    factual_accuracy: int = Field(ge=0, le=100)
-    logical_consistency: int = Field(ge=0, le=100)
-    communicational_integrity: int = Field(ge=0, le=100)
-    principle_consistency: int = Field(ge=0, le=100)
-    overall: int = Field(ge=0, le=100)
+    factual_accuracy: int | None = Field(default=None, ge=0, le=100)
+    logical_consistency: int | None = Field(default=None, ge=0, le=100)
+    communicational_integrity: int | None = Field(default=None, ge=0, le=100)
+    principle_consistency: int | None = Field(default=None, ge=0, le=100)
+    overall: int | None = Field(default=None, ge=0, le=100)
 
 
 class AiExplanations(BaseModel):
@@ -52,13 +52,28 @@ class AiAnalysisPublic(BaseModel):
     explanations: AiExplanations
     source_urls: list[AiSourceUrl] = Field(default_factory=list)
     ai_details: AiDetails
+    evidence_review_completeness: str | None = None
+    human_review_recommended: bool | None = None
+    human_review_reason: str | None = None
+    structural_review_status: str | None = None
+    factual_review_status: str | None = None
+    claims: list[dict] = Field(default_factory=list)
+    disclaimer: str | None = None
 
 
 class AiAnalysisInput(BaseModel):
     model_name: str
     prompt_version: str
     schema_version: str
-    scores: AiAnalysisInputScores
-    explanations: AiAnalysisInputExplanations
-    source_urls: list[AiSourceUrl] = Field(default_factory=list)
+    statement_analysis: dict
+    claims: list[dict] = Field(default_factory=list)
+    sources: list[dict] = Field(default_factory=list)
     ai_details: AiDetails | None = None
+
+    @property
+    def scores(self) -> AiAnalysisInputScores:
+        return AiAnalysisInputScores.model_validate(self.statement_analysis.get("scores", {}))
+
+    @property
+    def explanations(self) -> AiAnalysisInputExplanations:
+        return AiAnalysisInputExplanations.model_validate(self.statement_analysis.get("explanations", {}))

@@ -47,7 +47,7 @@ export function ScorePanel({
             onMouseEnter={() => onScorePreview?.(key)}
           >
             <span className="score-label">{scoreLabels[key]}</span>
-            <ScoreBadge value={scores[key]} size={key === "overall" ? "large" : "medium"} />
+            <ScoreBadge value={scores[key] ?? undefined} size={key === "overall" ? "large" : "medium"} />
           </button>
         ))}
       </div>
@@ -67,7 +67,7 @@ export function ScorePanel({
         >
           <dt>{scoreLabels[key]}</dt>
           <dd>
-            <ScoreBadge value={scores[key]} size={key === "overall" ? "large" : "medium"} />
+            <ScoreBadge value={scores[key] ?? undefined} size={key === "overall" ? "large" : "medium"} />
           </dd>
         </div>
       ))}

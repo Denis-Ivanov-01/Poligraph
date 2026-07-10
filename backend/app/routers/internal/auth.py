@@ -35,8 +35,8 @@ def login(
         return response
     moderator = db.scalar(select(Moderator).where(Moderator.username == username, Moderator.is_active.is_(True)))
     if moderator and verify_password(password, moderator.password_hash):
-        set_session(response, {"role": "moderator", "moderator_id": str(moderator.id), "csrf_token": csrf_token})
-        write_audit_log(db, request, {"role": "moderator", "moderator": moderator}, "login", "session")
+        set_session(response, {"role": moderator.global_role, "moderator_id": str(moderator.id), "csrf_token": csrf_token})
+        write_audit_log(db, request, {"role": moderator.global_role, "moderator": moderator}, "login", "session")
         return response
     return render(request, "internal/login.html", {"error": "Invalid username or password"}, status_code=400)
 

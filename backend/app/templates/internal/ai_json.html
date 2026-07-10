@@ -1,11 +1,14 @@
 {% extends "internal/base.html" %}
 {% block content %}
-<h2>New statement - step 3 of 3: paste AI JSON</h2>
-<p class="muted">Paste the valid JSON returned by the AI. Invalid JSON will be rejected.</p>
+<h2>Paste AI JSON</h2>
+<p class="muted">Paste the JSON returned by the external AI model. Invalid JSON stores the raw response and parse error for correction.</p>
+{% if ai_run and ai_run.parse_error %}
+  <p class="error">Previous parse error: {{ ai_run.parse_error }}</p>
+{% endif %}
 <h3>{{ statement.title or "Untitled statement" }}</h3>
 <form method="post" action="/internal/statements/{{ statement.id }}/ai-json" class="stack">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-  <textarea name="raw_json" rows="24" required>{{ raw_json or (statement.ai_analysis.raw_ai_response if statement.ai_analysis else "") }}</textarea>
-  <button type="submit">Validate and save</button>
+  <textarea name="raw_json" rows="24" required>{{ raw_json }}</textarea>
+  <button type="submit">Parse and validate structure</button>
 </form>
 {% endblock %}

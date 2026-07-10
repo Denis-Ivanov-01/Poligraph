@@ -27,14 +27,9 @@
   <label>Internal notes <textarea name="internal_notes">{{ statement.internal_notes if statement and statement.internal_notes else '' }}</textarea></label>
   {% if statement %}
     <section class="panel">
-      <h3>AI prompt and response</h3>
-      <p class="muted">Editing the JSON response recalculates the stored analysis shown in the public app.</p>
-      <label>Generated prompt
-        <textarea name="generated_prompt_text" rows="16">{{ statement.generated_prompt_text or (statement.ai_analysis.prompt_text if statement.ai_analysis else '') }}</textarea>
-      </label>
-      <label>Raw AI JSON response
-        <textarea name="raw_ai_response" rows="18">{{ statement.ai_analysis.raw_ai_response if statement.ai_analysis else '' }}</textarea>
-      </label>
+      <h3>AI workflow</h3>
+      <p class="muted">Use the separate workflow pages for generated prompt, pasted AI JSON, structural review, and publish.</p>
+      <p><a href="/internal/statements/{{ statement.id }}/prompt">Open AI workflow</a></p>
     </section>
   {% endif %}
   <button type="submit">{{ submit_label }}</button>

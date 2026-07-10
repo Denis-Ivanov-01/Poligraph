@@ -8,6 +8,7 @@ from starlette.responses import RedirectResponse
 from app.database import get_db
 from app.dependencies import current_internal_user, root_admin_required
 from app.models.commitment import Commitment, CommitmentEvidence
+from app.models.evidence import EvidenceItem
 from app.models.political_party import PoliticalParty
 from app.models.program import Program
 from app.routers.internal.utils import render
@@ -40,7 +41,11 @@ def program_query():
 def commitment_query():
     return (
         select(Commitment)
-        .options(selectinload(Commitment.program), selectinload(Commitment.related_party), selectinload(Commitment.evidence))
+        .options(
+            selectinload(Commitment.program),
+            selectinload(Commitment.related_party),
+            selectinload(Commitment.evidence_links).selectinload(CommitmentEvidence.evidence_item),
+        )
         .order_by(Commitment.display_order, Commitment.created_at.desc())
     )
 
@@ -115,13 +120,24 @@ def apply_program_ai_import(db: Session, program: Program, data: dict, raw_json:
         for note_index, note in enumerate(item.get("source_notes") or [], start=1):
             if not optional_text(str(note)):
                 continue
+            evidence_item = EvidenceItem(
+                title=f"Source note {note_index}",
+                url="",
+                source_type="other",
+                description=str(note),
+                source_origin="ai_imported",
+                reliability_level="medium",
+                structural_status="parsed",
+                factual_review_status="not_reviewed",
+            )
+            db.add(evidence_item)
+            db.flush()
             db.add(
                 CommitmentEvidence(
                     commitment_id=commitment.id,
-                    title=f"Source note {note_index}",
-                    source_type="other",
-                    description=str(note),
-                    supports_status=False,
+                    evidence_item_id=evidence_item.id,
+                    relation_type="background",
+                    source_origin="ai_imported",
                 )
             )
     return len(data["commitments"])
@@ -605,16 +621,26 @@ def create_evidence(
 ):
     validate_csrf(request, csrf_token)
     commitment = get_commitment(db, commitment_id)
-    evidence = CommitmentEvidence(
-        commitment_id=commitment.id,
+    evidence_item = EvidenceItem(
         title=title.strip(),
-        url=optional_text(url),
+        url=optional_text(url) or "",
         source_type=source_type if source_type in EVIDENCE_SOURCE_TYPES else "other",
         publisher=optional_text(publisher),
         published_at=parse_date(published_at),
         quote_or_relevant_excerpt=optional_text(quote_or_relevant_excerpt),
         description=optional_text(description),
-        supports_status=bool(supports_status),
+        reliability_level="medium",
+        source_origin="manual",
+        structural_status="valid",
+        factual_review_status="not_reviewed",
+    )
+    db.add(evidence_item)
+    db.flush()
+    evidence = CommitmentEvidence(
+        commitment_id=commitment.id,
+        evidence_item_id=evidence_item.id,
+        relation_type="supports_status" if supports_status else "background",
+        source_origin="manual",
     )
     db.add(evidence)
     db.commit()
@@ -660,14 +686,15 @@ def update_evidence(
     evidence = db.get(CommitmentEvidence, evidence_id)
     if not evidence or evidence.commitment_id != commitment_id:
         raise HTTPException(status_code=404, detail="Evidence not found")
-    evidence.title = title.strip()
-    evidence.url = optional_text(url)
-    evidence.source_type = source_type if source_type in EVIDENCE_SOURCE_TYPES else "other"
-    evidence.publisher = optional_text(publisher)
-    evidence.published_at = parse_date(published_at)
-    evidence.quote_or_relevant_excerpt = optional_text(quote_or_relevant_excerpt)
-    evidence.description = optional_text(description)
-    evidence.supports_status = bool(supports_status)
+    evidence_item = evidence.evidence_item
+    evidence_item.title = title.strip()
+    evidence_item.url = optional_text(url) or ""
+    evidence_item.source_type = source_type if source_type in EVIDENCE_SOURCE_TYPES else "other"
+    evidence_item.publisher = optional_text(publisher)
+    evidence_item.published_at = parse_date(published_at)
+    evidence_item.quote_or_relevant_excerpt = optional_text(quote_or_relevant_excerpt)
+    evidence_item.description = optional_text(description)
+    evidence.relation_type = "supports_status" if supports_status else "background"
     db.commit()
     write_audit_log(db, request, user, "update_commitment_evidence", "commitment", str(commitment_id), {"title": evidence.title})
     return RedirectResponse(f"/internal/programs/commitments/{commitment_id}/edit", status_code=303)

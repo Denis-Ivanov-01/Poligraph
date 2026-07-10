@@ -9,6 +9,12 @@ from app.services.commitment_service import active_government_program_summary
 
 
 def dashboard_data(db: Session) -> dict:
+    overall_expr = (
+        func.coalesce(AiAnalysis.factual_accuracy_score, 0)
+        + func.coalesce(AiAnalysis.logical_consistency_score, 0)
+        + func.coalesce(AiAnalysis.communicational_integrity_score, 0)
+        + func.coalesce(AiAnalysis.principle_consistency_score, 0)
+    ) / 4.0
     published = (
         select(Statement)
         .where(Statement.status == "published", Statement.is_deleted.is_(False), Statement.is_archived.is_(False))
@@ -17,14 +23,14 @@ def dashboard_data(db: Session) -> dict:
         .limit(10)
     )
     average = db.scalar(
-        select(func.avg(AiAnalysis.overall_score)).join(Statement).where(
+        select(func.avg(overall_expr)).join(Statement).where(
             Statement.status == "published",
             Statement.is_deleted.is_(False),
             Statement.is_archived.is_(False),
             AiAnalysis.is_published.is_(True),
         )
     )
-    politician_average_score = func.avg(AiAnalysis.overall_score).label("average_overall_score")
+    politician_average_score = func.avg(overall_expr).label("average_overall_score")
     politician_statement_count = func.count(Statement.id).label("analyzed_statement_count")
     top_politicians = db.execute(
         select(
@@ -47,7 +53,7 @@ def dashboard_data(db: Session) -> dict:
         .order_by(politician_average_score.desc(), politician_statement_count.desc(), Politician.full_name)
         .limit(5)
     ).all()
-    party_average_score = func.avg(AiAnalysis.overall_score).label("average_overall_score")
+    party_average_score = func.avg(overall_expr).label("average_overall_score")
     party_statement_count = func.count(Statement.id).label("analyzed_statement_count")
     top_parties = db.execute(
         select(

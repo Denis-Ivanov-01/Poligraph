@@ -5,23 +5,47 @@
 <p>Politician: {{ statement.politician.full_name }}</p>
 <pre>{{ statement.original_text }}</pre>
 {% if statement.ai_analysis %}
-  <h3>AI analysis</h3>
-  <p>Overall: {{ statement.ai_analysis.overall_score }}</p>
+  <h3>AI-generated analysis</h3>
+  <p class="muted">Structural review checks JSON shape and expected fields. It is not factual approval.</p>
+  <p>UI-computed overall: {{ statement.ai_analysis.overall_score }}</p>
+  <p>Structural review: {{ statement.ai_analysis.structural_review_status }}</p>
+  <p>Factual review: {{ statement.ai_analysis.factual_review_status }}</p>
   <ul>
     <li>Factual accuracy: {{ statement.ai_analysis.factual_accuracy_score }} - {{ statement.ai_analysis.factual_accuracy_explanation }}</li>
     <li>Logical consistency: {{ statement.ai_analysis.logical_consistency_score }} - {{ statement.ai_analysis.logical_consistency_explanation }}</li>
     <li>Communicational integrity: {{ statement.ai_analysis.communicational_integrity_score }} - {{ statement.ai_analysis.communicational_integrity_explanation }}</li>
     <li>Principle consistency: {{ statement.ai_analysis.principle_consistency_score }} - {{ statement.ai_analysis.principle_consistency_explanation }}</li>
-    <li>Overall: {{ statement.ai_analysis.overall_score }} - {{ statement.ai_analysis.overall_explanation }}</li>
   </ul>
-  {% if statement.ai_analysis.source_urls %}
-    <h3>Source URLs</h3>
+  {% if statement.ai_analysis.claims %}
+    <h3>Extracted claims</h3>
     <ul>
-      {% for source in statement.ai_analysis.source_urls %}
-        <li><a href="{{ source.url }}">{{ source.url }}</a>{% if source.description %} - {{ source.description }}{% endif %}</li>
+      {% for claim in statement.ai_analysis.claims|sort(attribute="display_order") %}
+        <li>
+          <strong>{{ claim.display_code }}</strong>: {{ claim.normalized_claim }}
+          <br>Materiality: {{ claim.materiality }}; AI verification status: {{ claim.ai_verification_status }}; Confidence: {{ claim.confidence_level }}
+          {% if claim.evidence_links %}
+            <ul>
+              {% for link in claim.evidence_links %}
+                <li>{{ link.relation_type }}: <a href="{{ link.evidence_item.url }}">{{ link.evidence_item.title }}</a></li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        </li>
       {% endfor %}
     </ul>
   {% endif %}
+  <form method="post" action="/internal/statements/{{ statement.id }}/structural-review" class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Structural review
+      <select name="structural_review_status">
+        <option value="passed">passed</option>
+        <option value="failed">failed</option>
+        <option value="needs_fix">needs_fix</option>
+      </select>
+    </label>
+    <label>Structural review note <textarea name="structural_review_note" rows="3">{{ statement.ai_analysis.structural_review_note or '' }}</textarea></label>
+    <button type="submit">Save structural review</button>
+  </form>
   <form method="post" action="/internal/statements/{{ statement.id }}/publish">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <button type="submit">Publish</button>

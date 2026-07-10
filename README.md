@@ -16,14 +16,16 @@ From system standpoint:
 - Implement advanced moderator rights restriction - mods must be able to edit only their posts, to be assigned only some politicians, parties, etc.
 - Moderator actions must be reversible by the administrator
 - Add contacts page and github repo link in the home page
-- All accessible from the UI methods for import/deleting/other actions must be easily accessible from REST to enable future automation.
+- All accessible from the UI methods for import/deleting/other actions must be easily accessible from REST to enable future automation. A better safety-wise alternative is to have a python API without exposing it to REST.
 - All endpoints must be protected by credentials to enable ease of future autiomation while maintaning security.
 - All credentials-related stuff must be encrypted.
+- Each list in the internal app (statements, commitments, programs...) must have a checkbox for each item for batch deletion and other actions
+- After mods log in their account, they must be able to change their password from the internal site
 
 From AI workflow standpoint:
 - The political program workflow should support: AI-generated JSON with summaries for all the commitments. Then there should be a dedicated page for each commitment. There must be an option for multiple commitments to be imported all at once.
 - For all entities that have forms for filling out, at the bottom there must be an input box for JSONs so even this can be easily automated.
-
+- Design a semi automated workflow that allows moderators to track progress on political programs for each goal/sub-goal (commitment). Each modertor will be in charge of multiple things so there must be a (official or unofficial) way to keep track of checked things
 
 ## Why this project exists
 

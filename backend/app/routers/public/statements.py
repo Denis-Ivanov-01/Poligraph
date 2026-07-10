@@ -19,6 +19,7 @@ def published_statement_query():
             selectinload(Statement.politician),
             selectinload(Statement.party_at_statement_time),
             selectinload(Statement.ai_analysis),
+            selectinload(Statement.claims),
             selectinload(Statement.media),
         )
     )

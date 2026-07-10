@@ -1,33 +1,70 @@
-PROMPT_VERSION = "mvp-2"
-SCHEMA_VERSION = "mvp-2"
+import json
+
+
+PROMPT_VERSION = "mvp-3"
+SCHEMA_VERSION = "mvp-3"
 MAX_PREVIOUS_STATEMENTS = 8
 MAX_PREVIOUS_BLOCK_CHARS = 8000
 MAX_SINGLE_PREVIOUS_STATEMENT_CHARS = 1200
 
 
-AI_RESPONSE_JSON_SCHEMA = """{
-  "model_name": "string",
-  "prompt_version": "mvp-1",
-  "schema_version": "mvp-1",
-  "scores": {
-    "factual_accuracy": 0,
-    "logical_consistency": 0,
-    "communicational_integrity": 0,
-    "principle_consistency": 0
-  },
-  "explanations": {
-    "factual_accuracy": "string",
-    "logical_consistency": "string",
-    "communicational_integrity": "string",
-    "principle_consistency": "string"
-  },
-  "source_urls": [
+AI_RESPONSE_JSON_SCHEMA = json.dumps(
     {
-      "url": "string",
-      "description": "optional string"
-    }
-  ]
-}"""
+        "model_name": "string",
+        "prompt_version": PROMPT_VERSION,
+        "schema_version": SCHEMA_VERSION,
+        "statement_analysis": {
+            "factual_accuracy_applicability": "applicable",
+            "scores": {
+                "factual_accuracy": 80,
+                "logical_consistency": 75,
+                "communicational_integrity": 70,
+                "principle_consistency": 100,
+            },
+            "explanations": {
+                "factual_accuracy": "string",
+                "logical_consistency": "string",
+                "communicational_integrity": "string",
+                "principle_consistency": "string",
+            },
+            "evidence_review_completeness": "partial",
+            "human_review_recommended": False,
+            "human_review_reason": None,
+        },
+        "claims": [
+            {
+                "claim_ref": "C1",
+                "exact_quote": "string",
+                "normalized_claim": "string",
+                "claim_type": "factual",
+                "checkability": "checkable",
+                "materiality": "high",
+                "materiality_reason": "string",
+                "ai_verification_status": "supported",
+                "confidence_level": "high",
+                "evidence_summary": "string",
+                "missing_or_uncertain_evidence": None,
+                "used_for_dimensions": ["factual_accuracy"],
+                "source_refs": ["S1"],
+            }
+        ],
+        "sources": [
+            {
+                "source_ref": "S1",
+                "title": "string",
+                "url": "string",
+                "source_type": "government_document",
+                "publisher": "string",
+                "published_at": "YYYY-MM-DD or null",
+                "quote_or_relevant_excerpt": "string",
+                "description": "string",
+                "reliability_level": "high",
+            }
+        ],
+    },
+    indent=2,
+    ensure_ascii=False,
+)
 
 
 STATEMENT_ANALYSIS_PROMPT_TEMPLATE = """You are an independent evaluator for a public political transparency platform.
@@ -40,6 +77,7 @@ CORE DUTY
 - Do not treat opinions, promises, predictions, goals, or value judgments as factual claims.
 - Evaluate each dimension independently.
 - If reliable evidence is genuinely insufficient for a dimension after serious investigation, return 50 for that dimension.
+- Return extracted claims and sources in normalized form. Claim/source refs such as C1 and S1 are temporary local JSON refs only.
 
 MANDATORY EVIDENCE INVESTIGATION
 - Evidence gathering is the highest priority.
@@ -106,8 +144,12 @@ Definition: Degree to which the statement is consistent with the politician's pr
 
 OUTPUT RULES
 - Do not return an overall score or overall explanation.
+- Put the four dimension scores inside statement_analysis.scores.
 - Each explanation must briefly justify the assigned score, mention main supporting and limiting factors, remain neutral, and not repeat the numeric score.
-- Include source_urls that materially support the verification or evaluation, with brief descriptions.
+- Include sources that materially support the verification or evaluation, with source_ref values used by claims.source_refs.
+- For factual_accuracy, set factual_accuracy_applicability to "not_applicable" only when the statement contains no factual claims.
+- Use evidence_review_completeness: "complete", "partial", or "limited_by_public_evidence".
+- Set human_review_recommended and human_review_reason when the output should receive human factual review.
 - Return only valid JSON matching the exact schema below.
 
 The AI response must match this exact JSON schema:

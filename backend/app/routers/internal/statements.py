@@ -1,5 +1,6 @@
 from datetime import date
 from uuid import UUID
+import re
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlalchemy import select
@@ -15,7 +16,6 @@ from app.routers.internal.utils import render
 from app.security import validate_csrf
 from app.services.ai_json_validation_service import validate_ai_json
 from app.services.audit_service import write_audit_log
-from app.services.statement_analysis_service import apply_statement_ai_analysis
 
 router = APIRouter(prefix="/internal/statements", tags=["internal-statements"])
 
@@ -34,6 +34,25 @@ def statement_form_options(db: Session) -> dict:
         "politicians": db.scalars(select(Politician).where(Politician.is_deleted.is_(False)).order_by(Politician.full_name)).all(),
         "parties": db.scalars(select(PoliticalParty).where(PoliticalParty.is_deleted.is_(False)).order_by(PoliticalParty.full_name)).all(),
     }
+
+
+def _slugify(value: str) -> str:
+    slug = re.sub(r"[^a-zA-Z0-9а-яА-Я]+", "-", value.strip().lower()).strip("-")
+    return slug or "statement"
+
+
+def unique_statement_slug(db: Session, title: str | None, statement_id: UUID | None = None) -> str:
+    base = _slugify(title or "statement")
+    slug = base
+    counter = 2
+    while True:
+        query = select(Statement).where(Statement.slug == slug)
+        if statement_id:
+            query = query.where(Statement.id != statement_id)
+        if not db.scalar(query):
+            return slug
+        slug = f"{base}-{counter}"
+        counter += 1
 
 
 @router.get("")
@@ -66,8 +85,6 @@ def create_statement(
     politician_id: str = Form(...),
     party_at_statement_time_id: str = Form(""),
     internal_notes: str = Form(""),
-    generated_prompt_text: str = Form(""),
-    raw_ai_response: str = Form(""),
     csrf_token: str = Form(...),
     user: dict = Depends(current_internal_user),
     db: Session = Depends(get_db),
@@ -75,6 +92,7 @@ def create_statement(
     validate_csrf(request, csrf_token)
     statement = Statement(
         title=title.strip() or None,
+        slug=unique_statement_slug(db, title.strip() or None),
         source_type=source_type,
         source_url=source_url or None,
         original_text=original_text,
@@ -132,6 +150,7 @@ def update_statement(
     if not statement:
         raise HTTPException(status_code=404, detail="Statement not found")
     statement.title = title.strip() or None
+    statement.slug = unique_statement_slug(db, statement.title, statement.id)
     statement.source_type = source_type
     statement.source_url = source_url or None
     statement.original_text = original_text
@@ -139,26 +158,6 @@ def update_statement(
     statement.politician_id = politician_id
     statement.party_at_statement_time_id = party_at_statement_time_id or None
     statement.internal_notes = internal_notes or None
-    statement.generated_prompt_text = generated_prompt_text or None
-    if statement.ai_analysis and generated_prompt_text:
-        statement.ai_analysis.prompt_text = generated_prompt_text
-    if raw_ai_response.strip():
-        try:
-            data = validate_ai_json(raw_ai_response)
-        except ValueError as exc:
-            context = {
-                "user": user,
-                "statement": statement,
-                "form_title": "Edit statement",
-                "form_note": "Update the draft or published statement fields.",
-                "form_action": f"/internal/statements/{statement_id}/edit",
-                "submit_label": "Save changes",
-                "error": str(exc),
-            }
-            context.update(statement_form_options(db))
-            return render(request, "internal/statement_form.html", context, status_code=400)
-        analysis = apply_statement_ai_analysis(statement, data, raw_ai_response, generated_prompt_text or statement.generated_prompt_text or "")
-        db.add(analysis)
     db.commit()
     write_audit_log(db, request, user, "update_statement", "statement", str(statement.id), {"title": statement.title})
     return RedirectResponse("/internal/statements", status_code=303)
