@@ -9,3 +9,4 @@ dist/
 media/
 postgres_data/
 redis_data/
+graphify-out/

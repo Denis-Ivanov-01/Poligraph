@@ -202,12 +202,16 @@ function HomeCommitmentsSummary({ summary }: { summary?: ActiveGovernmentProgram
   const counts = summary?.status_counts;
   const countItems = [
     ["fulfilled", text.programs.statuses.fulfilled],
+    ["kept_to_date", text.programs.statuses.kept_to_date],
     ["in_progress", text.programs.statuses.in_progress],
+    ["delayed", text.programs.statuses.delayed],
     ["partially_fulfilled", text.programs.statuses.partially_fulfilled],
-    ["broken", text.programs.statuses.broken],
+    ["violated", text.programs.statuses.violated],
     ["not_started", text.programs.statuses.not_started],
-    ["insufficient_data", text.programs.statuses.insufficient_data],
-    ["blocked", text.programs.statuses.blocked],
+    ["condition_not_met", text.programs.statuses.condition_not_met],
+    ["not_due", text.programs.statuses.not_due],
+    ["not_applicable", text.programs.statuses.not_applicable],
+    ["unclear", text.programs.statuses.unclear],
     ["abandoned", text.programs.statuses.abandoned]
   ];
 
@@ -224,25 +228,27 @@ function HomeCommitmentsSummary({ summary }: { summary?: ActiveGovernmentProgram
         <EmptyState message={text.home.noActiveGovernmentProgram} />
       ) : (
         <div className="home-commitments-panel">
-          <div className="home-commitments-intro">
-            <p className="eyebrow">{summary.program.title}</p>
-            <h3>{text.home.commitmentsQuestion}</h3>
-            <p>{text.programs.subtitle}</p>
-            <strong>{summary.total_commitments} {text.home.totalCommitments}</strong>
-          </div>
-          <div className="home-commitments-counts">
-            {countItems.map(([key, label]) => (
-              <div key={key}>
-                <span>{counts?.[key] ?? 0}</span>
-                <small>{label}</small>
-              </div>
-            ))}
-          </div>
+          <Link className="home-program-tile" to={`/programs/${summary.program.id}`}>
+            <div className="home-commitments-intro">
+              <p className="eyebrow">{summary.program.title}</p>
+              <h3>{text.home.commitmentsQuestion}</h3>
+              <p>{text.programs.subtitle}</p>
+              <strong>{summary.total_commitments} {text.home.totalCommitments}</strong>
+            </div>
+            <div className="home-commitments-counts">
+              {countItems.map(([key, label]) => (
+                <div key={key}>
+                  <span>{counts?.[key] ?? 0}</span>
+                  <small>{label}</small>
+                </div>
+              ))}
+            </div>
+          </Link>
           {summary.key_commitments.length ? (
             <ul className="home-commitments-list">
               {summary.key_commitments.map((commitment) => (
                 <li key={commitment.id}>
-                  <Link to={`/programs/commitments/${commitment.slug}`}>
+                  <Link to={`/programs/${commitment.program.id}/commitments/${commitment.slug}`}>
                     <strong>{commitment.title}</strong>
                     <span className={`status-badge status-${commitment.status}`}>{commitment.status_label}</span>
                   </Link>

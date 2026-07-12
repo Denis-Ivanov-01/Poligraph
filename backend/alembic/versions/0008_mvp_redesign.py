@@ -20,6 +20,7 @@ depends_on: str | Sequence[str] | None = None
 
 TABLES = (
     "statement_commitments",
+    "program_media_assets",
     "case_commitments",
     "case_statements",
     "case_fact_point_evidence_links",

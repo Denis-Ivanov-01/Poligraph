@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -24,6 +24,25 @@ class AiRun(Base):
     raw_ai_response: Mapped[str | None] = mapped_column(Text)
     parsed_json: Mapped[dict | None] = mapped_column(JSONB)
     parse_error: Mapped[str | None] = mapped_column(Text)
+    import_error: Mapped[str | None] = mapped_column(Text)
+    input_snapshot: Mapped[dict | None] = mapped_column(JSONB)
+    local_ref_map: Mapped[dict | None] = mapped_column(JSONB)
+    input_fingerprint: Mapped[str | None] = mapped_column(String(64), index=True)
+    analysis_date: Mapped[date | None] = mapped_column(Date)
+    methodology_version: Mapped[str | None] = mapped_column(String(80))
+    parent_ai_run_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("ai_runs.id"), index=True)
+    batch_item_ref: Mapped[str | None] = mapped_column(String(80), index=True)
+    batch_position: Mapped[int | None] = mapped_column(Integer)
+    expected_item_count: Mapped[int] = mapped_column(Integer, default=0)
+    completed_item_count: Mapped[int] = mapped_column(Integer, default=0)
+    failed_item_count: Mapped[int] = mapped_column(Integer, default=0)
+    human_review_item_count: Mapped[int] = mapped_column(Integer, default=0)
+    retry_count: Mapped[int] = mapped_column(Integer, default=0)
+    validation_errors: Mapped[list | None] = mapped_column(JSONB)
+    telemetry: Mapped[dict | None] = mapped_column(JSONB)
+    input_tokens: Mapped[int | None] = mapped_column(Integer)
+    output_tokens: Mapped[int | None] = mapped_column(Integer)
+    tool_call_count: Mapped[int | None] = mapped_column(Integer)
     structural_review_status: Mapped[str] = mapped_column(String(40), default="not_reviewed", index=True)
     structural_review_note: Mapped[str | None] = mapped_column(Text)
     factual_review_status: Mapped[str] = mapped_column(String(40), default="not_reviewed", index=True)
@@ -36,12 +55,16 @@ class AiRun(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     response_pasted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     parsed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    validated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    imported_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     structural_reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     fact_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     statement_analysis = relationship("StatementAiAnalysis", back_populates="ai_run", uselist=False)
     created_by_user = relationship("User", foreign_keys=[created_by_user_id], back_populates="created_ai_runs")
+    parent_ai_run = relationship("AiRun", remote_side=[id], back_populates="child_ai_runs")
+    child_ai_runs = relationship("AiRun", back_populates="parent_ai_run", order_by="AiRun.batch_position")
 
 
 class StatementAiAnalysis(Base):

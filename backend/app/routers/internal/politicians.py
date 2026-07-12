@@ -2,7 +2,7 @@ from datetime import date
 
 from fastapi import APIRouter, Depends, Form, Request
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 from starlette.responses import RedirectResponse
 
 from app.database import get_db

@@ -1,28 +1,183 @@
 {% extends "internal/base.html" %}
+
+{% macro commitment_status(commitment) %}
+  {{ statuses[commitment.status].label if commitment.status in statuses else commitment.status }}
+  {% if commitment.status != "not_analyzed" and commitment.confidence_level in confidence_levels %}
+    - {{ confidence_levels[commitment.confidence_level] }}
+  {% endif %}
+  {% if commitment.status != "not_analyzed" and commitment.contribution_level in contribution_levels %}
+    | Принос: {{ contribution_levels[commitment.contribution_level].label }}
+  {% endif %}
+{% endmacro %}
+
+{% macro render_commitments(items) %}
+  <div class="program-commitments">
+    <h5>Ангажименти</h5>
+    <ul>
+      {% for commitment in items|sort(attribute="display_order") %}
+        <li>
+          <div>
+            <strong>{{ commitment.display_code or "" }} {{ commitment.title }}</strong>
+            <span class="muted">{{ commitment_status(commitment) }}</span>
+          </div>
+          <div class="actions">
+            <a href="/internal/programs/commitments/{{ commitment.id }}/edit">Редакция</a>
+            <a href="/internal/programs/commitments/{{ commitment.id }}/status-prompt">Анализирай</a>
+          </div>
+        </li>
+      {% else %}
+        <li class="muted">Няма директни ангажименти в тази секция.</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endmacro %}
+
+{% macro render_section(section) %}
+  <details class="program-section-node" open>
+    <summary>
+      <span class="program-section-title">{{ section.section_code or "" }} {{ section.title }}</span>
+      <span class="program-section-counts">
+        {{ section.child_sections|length }} подсекции ({{ section_commitment_totals.get(section.id|string, 0) }} ангажимента) | {{ section.commitments|length }} ангажименти
+      </span>
+    </summary>
+    <div class="program-section-body">
+      {% if section.problem_description %}<p>{{ section.problem_description }}</p>{% endif %}
+      {% if section.summary %}<p class="muted">{{ section.summary }}</p>{% endif %}
+      {% if section.aggregate_status_summary %}<p class="muted"><strong>Обобщение:</strong> {{ section.aggregate_status_summary }}</p>{% endif %}
+      <p class="actions">
+        <a href="/internal/programs/sections/{{ section.id }}/edit">Редакция</a>
+        <a href="/internal/programs/sections/new?program_id={{ program.id }}&parent_section_id={{ section.id }}">Нова подсекция</a>
+        <a href="/internal/programs/sections/{{ section.id }}/refinement-prompt">Уточняване на структурата</a>
+        <a href="/internal/programs/sections/{{ section.id }}/batch-status?scope=direct">Batch анализ: само директни</a>
+        <a href="/internal/programs/sections/{{ section.id }}/batch-status?scope=recursive">Batch анализ: цялото поддърво</a>
+        <a href="/internal/programs/sections/{{ section.id }}/summary-prompt">Обобщение на секцията</a>
+      </p>
+      {% if not section.child_sections and not section.commitments %}
+        <form method="post" action="/internal/programs/sections/{{ section.id }}/delete" class="inline" onsubmit="return confirm('Да се изтрие ли тази празна чернова секция?')">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit">Изтриване</button>
+        </form>
+      {% endif %}
+      {{ render_commitments(section.commitments) }}
+      {% if section.child_sections %}
+        <div class="program-subsections">
+          {% for child in section.child_sections|sort(attribute="display_order") %}
+            {{ render_section(child) }}
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </details>
+{% endmacro %}
+
 {% block content %}
-<h2>New program - step 4 of 4: preview and publish</h2>
-<p class="muted">Review the imported commitments. You can edit individual commitments before publishing if needed.</p>
+<h2>Редакция на програма</h2>
+<p class="muted">Структурната проверка не е фактологична проверка. AI анализите и източниците остават "непрегледани", докато няма отделен човешки преглед.</p>
+
 <section class="panel">
   <h3>{{ program.title }}</h3>
-  <p><strong>Subject:</strong> {{ program.political_subject_name }}</p>
-  <p><strong>Type:</strong> {{ program.program_type }}</p>
-  {% if program.source_url %}<p><strong>Source:</strong> <a href="{{ program.source_url }}" target="_blank" rel="noopener noreferrer">{{ program.source_url }}</a></p>{% endif %}
+  <p><strong>Политически субект:</strong> {{ program.political_subject_name }}</p>
+  <p><strong>Тип:</strong> {{ program.program_type }}</p>
+  <p><strong>Структурна проверка:</strong> {{ program.structural_review_status }}</p>
+  <p><strong>Фактологична проверка:</strong> {{ program.factual_review_status }}</p>
+  {% if program.source_url %}<p><strong>Източник:</strong> <a href="{{ program.source_url }}" target="_blank" rel="noopener noreferrer">{{ program.source_title or program.source_url }}</a></p>{% endif %}
+  {% if program.source_coverage_status == "partial" %}<p class="error">Източникът е частичен. Структурата не трябва да се представя като пълна.</p>{% endif %}
+  {% if program.source_acquisition_method == "source_not_found" %}<p class="error">Не е намерен надежден официален източник.</p>{% endif %}
+  {% if program.source_acquisition_note %}<p class="muted">{{ program.source_acquisition_note }}</p>{% endif %}
+  {% if program.media %}
+    <p><strong>Прикачени документи:</strong> {% for item in program.media %}{{ item.original_filename or item.file_path }}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+  {% endif %}
+  <p class="actions">
+    <a href="/internal/programs/{{ program.id }}/prompt">Генерирай prompt за цялата програма</a>
+    <a href="/internal/programs/{{ program.id }}/ai-json">Импортирай JSON</a>
+    <a href="/internal/programs/sections/new?program_id={{ program.id }}">Нова секция</a>
+  </p>
+  <form method="post" action="/internal/programs/{{ program.id }}/documents" enctype="multipart/form-data" class="stack compact-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label>Оригинален документ <input type="file" name="file" required></label>
+    <p class="muted">Файлът се пази за архив. За AI prompt използвайте публичен URL или поставете извлечения пълен текст.</p>
+    <button type="submit">Прикачи документ</button>
+  </form>
 </section>
+
+<section class="panel">
+  <h3>Структура</h3>
+  {% if root_sections or unsectioned_commitments %}
+    <div class="program-tree">
+      {% for section in root_sections %}
+        {{ render_section(section) }}
+      {% endfor %}
+      {% if unsectioned_commitments %}
+        <details class="program-section-node" open>
+          <summary>
+            <span class="program-section-title">Без секция</span>
+            <span class="program-section-counts">{{ unsectioned_commitments|length }} ангажименти</span>
+          </summary>
+          <div class="program-section-body">
+            {{ render_commitments(unsectioned_commitments) }}
+          </div>
+        </details>
+      {% endif %}
+    </div>
+  {% else %}
+    <p class="muted">Все още няма импортирана или ръчно създадена структура.</p>
+  {% endif %}
+</section>
+
+<h3>Всички ангажименти</h3>
+<p><a href="/internal/programs/commitments/new">Нов ангажимент</a></p>
 <table>
-  <tr><th>Title</th><th>Topic</th><th>Status</th><th>Confidence</th><th>Evidence</th><th>Actions</th></tr>
+  <tr><th>Код</th><th>Заглавие</th><th>Секция</th><th>Статус</th><th>Увереност</th><th>Източници</th><th>Действия</th></tr>
   {% for commitment in commitments %}
     <tr>
+      <td>{{ commitment.display_code or "" }}</td>
       <td>{{ commitment.title }}</td>
-      <td>{{ commitment.topic or "None" }}</td>
+      <td>{{ commitment.program_section.title if commitment.program_section else "Без секция" }}</td>
       <td>{{ statuses[commitment.status].label if commitment.status in statuses else commitment.status }}</td>
-      <td>{{ confidence_levels[commitment.confidence_level] if commitment.confidence_level in confidence_levels else commitment.confidence_level }}</td>
+      <td>{{ confidence_levels[commitment.confidence_level] if commitment.status != "not_analyzed" and commitment.confidence_level in confidence_levels else "-" }}</td>
       <td>{{ commitment.evidence|length }}</td>
-      <td><a href="/internal/programs/commitments/{{ commitment.id }}/edit">Edit</a></td>
+      <td>
+        <a href="/internal/programs/commitments/{{ commitment.id }}/edit">Редакция</a>
+        <a href="/internal/programs/commitments/{{ commitment.id }}/status-prompt">Анализирай ангажимента</a>
+      </td>
     </tr>
   {% endfor %}
 </table>
+
+<section class="panel">
+  <h3>История на AI анализите</h3>
+  <table>
+    <tr><th>Дата</th><th>Задача</th><th>Статус</th><th>Prompt</th><th>Schema</th><th>Грешка</th></tr>
+    {% for run in ai_runs %}
+      <tr>
+        <td>{{ run.created_at }}</td>
+        <td>{{ run.task_type }}</td>
+        <td>{{ run.status }}</td>
+        <td>{{ run.prompt_version }}</td>
+        <td>{{ run.schema_version }}</td>
+        <td>{{ run.import_error or run.parse_error or "" }}</td>
+      </tr>
+    {% else %}
+      <tr><td colspan="6">Няма AI runs.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+
+<form method="post" action="/internal/programs/{{ program.id }}/structural-review" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  <label>Структурна проверка
+    <select name="structural_review_status">
+      <option value="passed">Премината</option>
+      <option value="failed">Непремината</option>
+      <option value="needs_fix">Нужни корекции</option>
+    </select>
+  </label>
+  <label>Бележка <textarea name="structural_review_note">{{ program.structural_review_note or '' }}</textarea></label>
+  <button type="submit">Запази структурната проверка</button>
+</form>
+
 <form method="post" action="/internal/programs/{{ program.id }}/publish" class="stack">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-  <button type="submit">Publish program and commitments</button>
+  <button type="submit" {% if program.structural_review_status != "passed" %}disabled{% endif %}>Публикувай програмата и допустимите ангажименти</button>
 </form>
 {% endblock %}

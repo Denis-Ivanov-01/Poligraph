@@ -11,6 +11,7 @@ import { PartyDetailsPage } from "../pages/PartyDetailsPage";
 import { PoliticianDetailsPage } from "../pages/PoliticianDetailsPage";
 import { PoliticiansPage } from "../pages/PoliticiansPage";
 import { CommitmentDetailsPage } from "../pages/CommitmentDetailsPage";
+import { ProgramDetailsPage } from "../pages/ProgramDetailsPage";
 import { ProgramsPage } from "../pages/ProgramsPage";
 import { SearchPage } from "../pages/SearchPage";
 import { StatementDetailsPage } from "../pages/StatementDetailsPage";
@@ -33,7 +34,9 @@ export const router = createBrowserRouter([
       { path: "statements", element: <StatementsPage /> },
       { path: "statements/:id", element: <StatementDetailsPage /> },
       { path: "programs", element: <ProgramsPage /> },
+      { path: "programs/:programId/commitments/:slug", element: <CommitmentDetailsPage /> },
       { path: "programs/commitments/:slug", element: <CommitmentDetailsPage /> },
+      { path: "programs/:id", element: <ProgramDetailsPage /> },
       { path: "dashboard", element: <DashboardPage /> },
       {
         path: "methodology",

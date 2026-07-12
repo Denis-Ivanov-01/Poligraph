@@ -84,6 +84,7 @@ The internal interface is not intended for public access and must be protected i
 
 - [Technical documentation](./docs/TECHNICAL.md)
 - [Methodology rationale](./docs/METHODOLOGY.md)
+- [Program commitment analysis workflow](./docs/program_commitment_analysis_v6.md)
 
 The technical documentation covers architecture, setup, data flow, environment variables, moderation workflow, and deployment assumptions.
 

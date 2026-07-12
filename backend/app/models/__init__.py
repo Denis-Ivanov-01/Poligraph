@@ -19,7 +19,7 @@ from app.models.moderator import Moderator, User
 from app.models.party_membership import PartyMembership
 from app.models.political_party import PoliticalParty
 from app.models.politician import Politician
-from app.models.program import Program, ProgramAiExtraction, ProgramSection
+from app.models.program import Program, ProgramAiExtraction, ProgramSection, program_media_assets
 from app.models.revision import EntityRevision
 from app.models.statement import Statement
 from app.models.statement_claim import StatementClaim, StatementClaimEvidenceLink
@@ -52,6 +52,7 @@ __all__ = [
     "Program",
     "ProgramAiExtraction",
     "ProgramSection",
+    "program_media_assets",
     "Statement",
     "StatementAiAnalysis",
     "StatementClaim",

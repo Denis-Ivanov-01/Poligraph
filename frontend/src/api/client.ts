@@ -10,10 +10,11 @@ export class ApiError extends Error {
   }
 }
 
-export async function apiGet<T>(path: string): Promise<T> {
+export async function apiGet<T>(path: string, options: { signal?: AbortSignal } = {}): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "GET",
-    headers: { Accept: "application/json" }
+    headers: { Accept: "application/json" },
+    signal: options.signal
   });
   if (!response.ok) {
     let message = formatResource(text.api.requestFailed, { status: response.status });

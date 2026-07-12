@@ -1,0 +1,227 @@
+{
+  "description": "Sanitized standalone reference analyses covering the required commitment archetypes.",
+  "cases": [
+    {
+      "case_id": "legislation-in-force",
+      "archetype": "clear legislative completion",
+      "current_status": "fulfilled",
+      "baseline_mode": "new_policy",
+      "control_level": "high_shared",
+      "contribution_level": "shared",
+      "confidence": "high",
+      "status_explanation": "C1 е приет и е влязъл в сила.",
+      "material_components": [{"component_ref": "C1", "status": "complete", "evidence_refs": ["E1"]}],
+      "sources": [{"source_ref": "E1", "source_type": "legislation", "published_at": "2026-06-01", "accessed_at": "2026-07-12"}],
+      "evidence_links": [{"source_ref": "E1", "claim": "Законът е в сила.", "component_refs": ["C1"], "evidence_strength": "strong"}],
+      "human_review_recommended": false
+    },
+    {
+      "case_id": "bill-not-in-force",
+      "archetype": "legislation proposed but not in force",
+      "current_status": "in_progress",
+      "baseline_mode": "new_policy",
+      "control_level": "high_shared",
+      "contribution_level": "shared",
+      "confidence": "high",
+      "status_explanation": "C1 е внесен, но не е приет и не е в сила.",
+      "material_components": [{"component_ref": "C1", "status": "in_progress", "evidence_refs": ["E1"]}],
+      "sources": [{"source_ref": "E1", "source_type": "parliamentary_document", "published_at": "2026-06-15", "accessed_at": "2026-07-12"}],
+      "evidence_links": [{"source_ref": "E1", "claim": "Проектът е на парламентарна процедура.", "component_refs": ["C1"], "evidence_strength": "strong"}],
+      "human_review_recommended": false
+    },
+    {
+      "case_id": "operational-platform",
+      "archetype": "operational platform launch",
+      "current_status": "fulfilled",
+      "baseline_mode": "new_policy",
+      "control_level": "direct",
+      "contribution_level": "decisive",
+      "confidence": "high",
+      "status_explanation": "C1 е достъпен и работи според техническата документация.",
+      "material_components": [{"component_ref": "C1", "status": "complete", "evidence_refs": ["E1"]}],
+      "sources": [{"source_ref": "E1", "source_type": "government_document", "published_at": "2026-07-01", "accessed_at": "2026-07-12"}],
+      "evidence_links": [{"source_ref": "E1", "claim": "Платформата е оперативна.", "component_refs": ["C1"], "evidence_strength": "strong"}],
+      "human_review_recommended": true
+    },
+    {
+      "case_id": "multi-component-promise",
+      "archetype": "multi-component promise",
+      "current_status": "partially_fulfilled",
+      "baseline_mode": "expansion",
+      "control_level": "direct",
+      "contribution_level": "shared",
+      "confidence": "high",
+      "status_explanation": "C1 е завършен, а C2 остава в процес.",
+      "material_components": [
+        {"component_ref": "C1", "status": "complete", "evidence_refs": ["E1"]},
+        {"component_ref": "C2", "status": "in_progress", "evidence_refs": ["E2"]}
+      ],
+      "sources": [
+        {"source_ref": "E1", "source_type": "government_document", "published_at": "2026-06-01", "accessed_at": "2026-07-12"},
+        {"source_ref": "E2", "source_type": "procurement_record", "published_at": "2026-07-05", "accessed_at": "2026-07-12"}
+      ],
+      "evidence_links": [
+        {"source_ref": "E1", "claim": "Първият компонент е завършен.", "component_refs": ["C1"], "evidence_strength": "strong"},
+        {"source_ref": "E2", "claim": "Вторият компонент се изпълнява.", "component_refs": ["C2"], "evidence_strength": "medium"}
+      ],
+      "human_review_recommended": true
+    },
+    {
+      "case_id": "public-outcome",
+      "archetype": "public-outcome promise",
+      "current_status": "unclear",
+      "baseline_mode": "unclear",
+      "control_level": "limited_shared",
+      "contribution_level": "indeterminate",
+      "confidence": "low",
+      "status_explanation": "C1 не може да бъде отделен надеждно от външни фактори.",
+      "material_components": [{"component_ref": "C1", "status": "unclear", "evidence_refs": ["E1"]}],
+      "sources": [{"source_ref": "E1", "source_type": "statistical_dataset", "published_at": "2026-06-30", "accessed_at": "2026-07-12"}],
+      "evidence_links": [{"source_ref": "E1", "claim": "Показателят се променя, но причинността е неясна.", "component_refs": ["C1"], "evidence_strength": "weak"}],
+      "human_review_recommended": true
+    },
+    {
+      "case_id": "negative-maintenance",
+      "archetype": "negative or maintenance commitment",
+      "current_status": "kept_to_date",
+      "baseline_mode": "status_quo",
+      "control_level": "direct",
+      "contribution_level": "limited",
+      "confidence": "high",
+      "status_explanation": "C1 се спазва към датата на анализа.",
+      "material_components": [{"component_ref": "C1", "status": "complete", "evidence_refs": ["E1"]}],
+      "sources": [{"source_ref": "E1", "source_type": "official_register", "published_at": "2026-07-10", "accessed_at": "2026-07-12"}],
+      "evidence_links": [{"source_ref": "E1", "claim": "Обещаното състояние е запазено.", "component_refs": ["C1"], "evidence_strength": "strong"}],
+      "human_review_recommended": false
+    },
+    {
+      "case_id": "inherited-implementation",
+      "archetype": "inherited implementation",
+      "current_status": "fulfilled",
+      "baseline_mode": "inherited_implementation",
+      "control_level": "direct",
+      "contribution_level": "limited",
+      "confidence": "high",
+      "status_explanation": "C1 е завършен, но основната работа предхожда кабинета.",
+      "material_components": [{"component_ref": "C1", "status": "complete", "evidence_refs": ["E1", "E2"]}],
+      "sources": [
+        {"source_ref": "E1", "source_type": "contract", "published_at": "2024-04-01", "accessed_at": "2026-07-12"},
+        {"source_ref": "E2", "source_type": "government_document", "published_at": "2026-06-20", "accessed_at": "2026-07-12"}
+      ],
+      "evidence_links": [
+        {"source_ref": "E1", "claim": "Договорът и графикът предхождат кабинета.", "component_refs": ["C1"], "evidence_strength": "strong"},
+        {"source_ref": "E2", "claim": "Кабинетът е завършил процедурна стъпка.", "component_refs": ["C1"], "evidence_strength": "medium"}
+      ],
+      "human_review_recommended": false
+    },
+    {
+      "case_id": "shared-control-result",
+      "archetype": "shared-control result",
+      "current_status": "in_progress",
+      "baseline_mode": "continuation",
+      "control_level": "limited_shared",
+      "contribution_level": "shared",
+      "confidence": "medium",
+      "status_explanation": "C1 зависи от общини и независим регулатор и още не е завършен.",
+      "material_components": [{"component_ref": "C1", "status": "in_progress", "evidence_refs": ["E1"]}],
+      "sources": [{"source_ref": "E1", "source_type": "regulatory_decision", "published_at": "2026-05-20", "accessed_at": "2026-07-12"}],
+      "evidence_links": [{"source_ref": "E1", "claim": "Изпълнението е споделено и непълно.", "component_refs": ["C1"], "evidence_strength": "strong"}],
+      "human_review_recommended": true
+    },
+    {
+      "case_id": "absent-evidence",
+      "archetype": "absent evidence",
+      "current_status": "unclear",
+      "baseline_mode": "unclear",
+      "control_level": "unclear",
+      "contribution_level": "indeterminate",
+      "confidence": "low",
+      "status_explanation": "C1 остава неясен; липсата на открит документ не доказва неизпълнение.",
+      "material_components": [{"component_ref": "C1", "status": "unclear", "evidence_refs": ["E1"]}],
+      "sources": [{"source_ref": "E1", "source_type": "government_document", "published_at": null, "accessed_at": "2026-07-12"}],
+      "evidence_links": [{"source_ref": "E1", "claim": "Официалният портал не предоставя достъп до необходимия документ.", "component_refs": ["C1"], "evidence_strength": "weak"}],
+      "human_review_recommended": true
+    },
+    {
+      "case_id": "contradictory-evidence",
+      "archetype": "contradictory evidence",
+      "current_status": "unclear",
+      "baseline_mode": "continuation",
+      "control_level": "direct",
+      "contribution_level": "indeterminate",
+      "confidence": "low",
+      "status_explanation": "C1 е описан различно в два официални източника.",
+      "material_components": [{"component_ref": "C1", "status": "unclear", "evidence_refs": ["E1", "E2"]}],
+      "sources": [
+        {"source_ref": "E1", "source_type": "government_document", "published_at": "2026-06-01", "accessed_at": "2026-07-12"},
+        {"source_ref": "E2", "source_type": "audit_or_report", "published_at": "2026-06-25", "accessed_at": "2026-07-12"}
+      ],
+      "evidence_links": [
+        {"source_ref": "E1", "claim": "Институцията отчита завършване.", "component_refs": ["C1"], "evidence_strength": "medium"},
+        {"source_ref": "E2", "claim": "Одитът установява непълна работа.", "component_refs": ["C1"], "evidence_strength": "contradictory", "is_contradictory": true}
+      ],
+      "human_review_recommended": true
+    },
+    {
+      "case_id": "dynamic-quantitative-data",
+      "archetype": "dynamic quantitative data",
+      "current_status": "in_progress",
+      "baseline_mode": "continuation",
+      "control_level": "high_shared",
+      "contribution_level": "shared",
+      "confidence": "medium",
+      "status_explanation": "C1 достига 42% към отчетната дата, под обещаната цел.",
+      "quantitative_actual_as_of": "2026-06-30",
+      "material_components": [{"component_ref": "C1", "status": "in_progress", "evidence_refs": ["E1"]}],
+      "sources": [{"source_ref": "E1", "source_type": "statistical_dataset", "published_at": "2026-07-08", "accessed_at": "2026-07-12"}],
+      "evidence_links": [{"source_ref": "E1", "claim": "Текущата стойност е 42% към 30 юни.", "component_refs": ["C1"], "evidence_strength": "strong"}],
+      "human_review_recommended": true
+    },
+    {
+      "case_id": "contribution-attribution",
+      "archetype": "contribution attribution",
+      "current_status": "fulfilled",
+      "baseline_mode": "pre_secured_funding",
+      "control_level": "direct",
+      "contribution_level": "limited",
+      "confidence": "high",
+      "status_explanation": "C1 е завършен с предварително осигурено финансиране.",
+      "material_components": [{"component_ref": "C1", "status": "complete", "evidence_refs": ["E1", "E2"]}],
+      "sources": [
+        {"source_ref": "E1", "source_type": "budget_document", "published_at": "2024-12-20", "accessed_at": "2026-07-12"},
+        {"source_ref": "E2", "source_type": "government_document", "published_at": "2026-06-30", "accessed_at": "2026-07-12"}
+      ],
+      "evidence_links": [
+        {"source_ref": "E1", "claim": "Финансирането е осигурено предварително.", "component_refs": ["C1"], "evidence_strength": "strong"},
+        {"source_ref": "E2", "claim": "Кабинетът извършва финалната административна стъпка.", "component_refs": ["C1"], "evidence_strength": "medium"}
+      ],
+      "human_review_recommended": false
+    },
+    {
+      "case_id": "sigma-platform",
+      "archetype": "broad ambiguous language and SIGMA-style platform",
+      "current_status": "partially_fulfilled",
+      "baseline_mode": "continuation",
+      "control_level": "limited_shared",
+      "contribution_level": "limited",
+      "confidence": "high",
+      "status_explanation": "C1 е завършен; C2 е бъдеща функционалност; C3 не е доказан като резултат.",
+      "material_components": [
+        {"component_ref": "C1", "status": "complete", "evidence_refs": ["E1", "E2"]},
+        {"component_ref": "C2", "status": "absent", "evidence_refs": ["E2"]},
+        {"component_ref": "C3", "status": "unclear", "evidence_refs": ["E3"]}
+      ],
+      "sources": [
+        {"source_ref": "E1", "source_type": "official_register", "published_at": "2024-01-01", "accessed_at": "2026-07-12"},
+        {"source_ref": "E2", "source_type": "government_document", "published_at": "2026-07-05", "accessed_at": "2026-07-12"},
+        {"source_ref": "E3", "source_type": "audit_or_report", "published_at": "2026-06-20", "accessed_at": "2026-07-12"}
+      ],
+      "evidence_links": [
+        {"source_ref": "E1", "claim": "Публичните регистри и данни предхождат кабинета.", "component_refs": ["C1"], "evidence_strength": "strong"},
+        {"source_ref": "E2", "claim": "Платформата е read-only, а автоматичните проверки са в бъдещия план.", "component_refs": ["C1", "C2"], "evidence_strength": "contradictory", "is_contradictory": true},
+        {"source_ref": "E3", "claim": "Няма доказан широк антикорупционен ефект.", "component_refs": ["C3"], "evidence_strength": "medium"}
+      ],
+      "human_review_recommended": true
+    }
+  ]
+}

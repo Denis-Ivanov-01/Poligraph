@@ -1,5 +1,21 @@
 import json
 
+from app.models.ai_analysis import AiRun, StatementAiAnalysis
+from app.models.evidence import EvidenceItem
+from app.models.statement_claim import StatementClaim
+from app.schemas.ai_analysis import (
+    STATEMENT_CHECKABILITY_VALUES,
+    STATEMENT_CLAIM_TYPES,
+    STATEMENT_CONFIDENCE_LEVELS,
+    STATEMENT_DIMENSIONS,
+    STATEMENT_EVIDENCE_REVIEW_COMPLETENESS_VALUES,
+    STATEMENT_FACTUAL_ACCURACY_APPLICABILITIES,
+    STATEMENT_MATERIALITY_VALUES,
+    STATEMENT_VERIFICATION_STATUSES,
+)
+from app.services.commitment_service import EVIDENCE_SOURCE_TYPES
+from app.services.prompt_schema_builder import db_fields_contract, enum_list_contract
+
 
 PROMPT_VERSION = "mvp-3"
 SCHEMA_VERSION = "mvp-3"
@@ -8,65 +24,110 @@ MAX_PREVIOUS_BLOCK_CHARS = 8000
 MAX_SINGLE_PREVIOUS_STATEMENT_CHARS = 1200
 
 
-AI_RESPONSE_JSON_SCHEMA = json.dumps(
-    {
-        "model_name": "string",
-        "prompt_version": PROMPT_VERSION,
-        "schema_version": SCHEMA_VERSION,
-        "statement_analysis": {
-            "factual_accuracy_applicability": "applicable",
-            "scores": {
-                "factual_accuracy": 80,
-                "logical_consistency": 75,
-                "communicational_integrity": 70,
-                "principle_consistency": 100,
-            },
-            "explanations": {
-                "factual_accuracy": "string",
-                "logical_consistency": "string",
-                "communicational_integrity": "string",
-                "principle_consistency": "string",
-            },
-            "evidence_review_completeness": "partial",
-            "human_review_recommended": False,
-            "human_review_reason": None,
+def build_ai_response_json_schema() -> str:
+    run_fields = db_fields_contract(
+        AiRun,
+        ["model_name", "prompt_version", "schema_version"],
+        nullable_overrides={"model_name": False, "prompt_version": False, "schema_version": False},
+    )
+    statement_fields = db_fields_contract(
+        StatementAiAnalysis,
+        ["factual_accuracy_applicability", "evidence_review_completeness", "human_review_recommended", "human_review_reason"],
+        enum_fields={
+            "factual_accuracy_applicability": STATEMENT_FACTUAL_ACCURACY_APPLICABILITIES,
+            "evidence_review_completeness": STATEMENT_EVIDENCE_REVIEW_COMPLETENESS_VALUES,
         },
-        "claims": [
-            {
-                "claim_ref": "C1",
-                "exact_quote": "string",
-                "normalized_claim": "string",
-                "claim_type": "factual",
-                "checkability": "checkable",
-                "materiality": "high",
-                "materiality_reason": "string",
-                "ai_verification_status": "supported",
-                "confidence_level": "high",
-                "evidence_summary": "string",
-                "missing_or_uncertain_evidence": None,
-                "used_for_dimensions": ["factual_accuracy"],
-                "source_refs": ["S1"],
-            }
+        nullable_overrides={
+            "factual_accuracy_applicability": False,
+            "evidence_review_completeness": False,
+            "human_review_recommended": False,
+        },
+    )
+    claim_fields = db_fields_contract(
+        StatementClaim,
+        [
+            "exact_quote",
+            "normalized_claim",
+            "claim_type",
+            "checkability",
+            "materiality",
+            "materiality_reason",
+            "ai_verification_status",
+            "confidence_level",
+            "evidence_summary",
+            "missing_or_uncertain_evidence",
         ],
-        "sources": [
-            {
-                "source_ref": "S1",
-                "title": "string",
-                "url": "string",
-                "source_type": "government_document",
-                "publisher": "string",
-                "published_at": "YYYY-MM-DD or null",
-                "quote_or_relevant_excerpt": "string",
-                "description": "string",
-                "reliability_level": "high",
-            }
+        enum_fields={
+            "claim_type": STATEMENT_CLAIM_TYPES,
+            "checkability": STATEMENT_CHECKABILITY_VALUES,
+            "materiality": STATEMENT_MATERIALITY_VALUES,
+            "ai_verification_status": STATEMENT_VERIFICATION_STATUSES,
+            "confidence_level": STATEMENT_CONFIDENCE_LEVELS,
+        },
+        nullable_overrides={
+            "claim_type": False,
+            "checkability": False,
+            "materiality": False,
+            "ai_verification_status": False,
+            "confidence_level": False,
+        },
+    )
+    source_fields = db_fields_contract(
+        EvidenceItem,
+        [
+            "title",
+            "url",
+            "source_type",
+            "publisher",
+            "published_at",
+            "quote_or_relevant_excerpt",
+            "description",
+            "reliability_level",
         ],
-    },
-    indent=2,
-    ensure_ascii=False,
-)
-
-
+        enum_fields={"source_type": EVIDENCE_SOURCE_TYPES, "reliability_level": STATEMENT_CONFIDENCE_LEVELS},
+        nullable_overrides={"source_type": False, "reliability_level": False},
+    )
+    return json.dumps(
+        {
+            "model_name": run_fields["model_name"],
+            "prompt_version": PROMPT_VERSION,
+            "schema_version": SCHEMA_VERSION,
+            "statement_analysis": {
+                "factual_accuracy_applicability": statement_fields["factual_accuracy_applicability"],
+                "scores": {
+                    "factual_accuracy": 80,
+                    "logical_consistency": 75,
+                    "communicational_integrity": 70,
+                    "principle_consistency": 100,
+                },
+                "explanations": {
+                    "factual_accuracy": "string",
+                    "logical_consistency": "string",
+                    "communicational_integrity": "string",
+                    "principle_consistency": "string",
+                },
+                "evidence_review_completeness": statement_fields["evidence_review_completeness"],
+                "human_review_recommended": statement_fields["human_review_recommended"],
+                "human_review_reason": statement_fields["human_review_reason"],
+            },
+            "claims": [
+                {
+                    "claim_ref": "C1",
+                    **claim_fields,
+                    "used_for_dimensions": enum_list_contract(STATEMENT_DIMENSIONS),
+                    "source_refs": ["S1"],
+                }
+            ],
+            "sources": [
+                {
+                    "source_ref": "S1",
+                    **source_fields,
+                }
+            ],
+        },
+        indent=2,
+        ensure_ascii=False,
+    )
 STATEMENT_ANALYSIS_PROMPT_TEMPLATE = """You are an independent evaluator for a public political transparency platform.
 Return only valid JSON with all text fields written in {language}. This is a high-importance public-interest evaluation. Use maximum analytical rigor, do not conserve effort, and do not assign scores before completing the required evidence review. Do not include markdown, commentary, hidden reasoning, or additional keys.
 
@@ -150,6 +211,7 @@ OUTPUT RULES
 - For factual_accuracy, set factual_accuracy_applicability to "not_applicable" only when the statement contains no factual claims.
 - Use evidence_review_completeness: "complete", "partial", or "limited_by_public_evidence".
 - Set human_review_recommended and human_review_reason when the output should receive human factual review.
+- Use only enum values shown in the schema. Do not add fields outside the schema.
 - Return only valid JSON matching the exact schema below.
 
 The AI response must match this exact JSON schema:

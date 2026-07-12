@@ -3,13 +3,13 @@ from collections.abc import Sequence
 from app.models.statement import Statement
 from app.resources import resource_text
 from app.services.ai_prompt_template import (
-    AI_RESPONSE_JSON_SCHEMA,
     MAX_PREVIOUS_BLOCK_CHARS,
     MAX_PREVIOUS_STATEMENTS,
     MAX_SINGLE_PREVIOUS_STATEMENT_CHARS,
     PROMPT_VERSION,
     SCHEMA_VERSION,
     STATEMENT_ANALYSIS_PROMPT_TEMPLATE,
+    build_ai_response_json_schema,
 )
 
 
@@ -76,7 +76,7 @@ def build_statement_prompt(
 ) -> str:
     return STATEMENT_ANALYSIS_PROMPT_TEMPLATE.format(
         language=language,
-        response_json_schema=AI_RESPONSE_JSON_SCHEMA,
+        response_json_schema=build_ai_response_json_schema(),
         prompt_version=PROMPT_VERSION,
         schema_version=SCHEMA_VERSION,
         title=statement.title or "(no title provided)",

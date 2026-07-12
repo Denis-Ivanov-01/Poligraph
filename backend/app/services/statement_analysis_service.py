@@ -117,7 +117,6 @@ def apply_statement_ai_analysis(
         analysis = StatementAiAnalysis(statement_id=statement.id, ai_run_id=ai_run.id)
 
     statement_analysis = data.statement_analysis
-    scores = data.scores
     explanations = data.explanations
     analysis.analysis_date = datetime.now(timezone.utc)
     analysis.factual_accuracy_applicability = statement_analysis.get("factual_accuracy_applicability", "applicable")

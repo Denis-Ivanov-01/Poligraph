@@ -14,7 +14,6 @@ from app.models.politician import Politician
 from app.models.statement import Statement
 from app.routers.internal.utils import render
 from app.security import validate_csrf
-from app.services.ai_json_validation_service import validate_ai_json
 from app.services.audit_service import write_audit_log
 
 router = APIRouter(prefix="/internal/statements", tags=["internal-statements"])

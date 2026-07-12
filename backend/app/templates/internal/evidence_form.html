@@ -17,7 +17,34 @@
   <label>Published date <input type="date" name="published_at" value="{{ evidence.published_at if evidence.published_at else '' }}"></label>
   <label>Relevant excerpt <textarea name="quote_or_relevant_excerpt">{{ evidence.quote_or_relevant_excerpt if evidence.quote_or_relevant_excerpt else '' }}</textarea></label>
   <label>Description <textarea name="description">{{ evidence.description if evidence.description else '' }}</textarea></label>
-  <label class="checkbox-row"><input type="checkbox" name="supports_status" value="1" {% if evidence.supports_status %}checked{% endif %}> Supports current status</label>
+  <label>Evidence relation
+    <select name="relation_type">
+      {% for relation in ["supports_status", "contradicts_status", "contextualizes", "proves_completion", "proves_delay", "proves_violation", "supports_contribution", "contradicts_contribution", "background"] %}
+        <option value="{{ relation }}" {% if evidence.relation_type == relation %}selected{% endif %}>{{ relation }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Роля на източника
+    <select name="evidence_role">
+      <option value="">Не е зададена</option>
+      {% for key, label in evidence_roles.items() %}
+        <option value="{{ key }}" {% if evidence.evidence_role == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Сила на доказателството
+    <select name="evidence_strength">
+      <option value="">Не е зададена</option>
+      {% for key, label in evidence_strengths.items() %}
+        <option value="{{ key }}" {% if evidence.evidence_strength == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="checkbox-row"><input type="checkbox" name="is_self_reported" value="1" {% if evidence.is_self_reported %}checked{% endif %}> Самоотчетен източник</label>
+  <label class="checkbox-row"><input type="checkbox" name="is_independent_confirmation" value="1" {% if evidence.is_independent_confirmation %}checked{% endif %}> Независимо потвърждение</label>
+  <label class="checkbox-row"><input type="checkbox" name="is_contradictory" value="1" {% if evidence.is_contradictory %}checked{% endif %}> Противоречив източник</label>
+  <label class="checkbox-row"><input type="checkbox" name="is_disproven" value="1" {% if evidence.is_disproven %}checked{% endif %}> Опроверган източник</label>
+  <label>Ограничения <textarea name="limitations">{{ evidence.limitations if evidence.limitations else '' }}</textarea></label>
   <button type="submit">Save evidence</button>
 </form>
 {% endblock %}

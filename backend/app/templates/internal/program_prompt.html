@@ -1,11 +1,25 @@
 {% extends "internal/base.html" %}
 {% block content %}
-<h2>New program - step 2 of 4: generated AI prompt</h2>
-<p class="muted">Review, edit, and copy this prompt into a Deep Research-capable model. Saving it updates the stored prompt for this program.</p>
-<h3>{{ program.title }}</h3>
-<form method="post" action="/internal/programs/{{ program.id }}/prompt" class="stack">
-  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-  <textarea name="prompt_text" rows="24" required>{{ prompt }}</textarea>
-  <button type="submit">Next</button>
-</form>
+<h2>{{ prompt_title or "Generated AI prompt" }}</h2>
+<p class="muted">{{ prompt_note or "Review, edit, and copy this prompt into an external AI model. Saving it updates the stored AI run prompt." }}</p>
+{% if error %}
+  <p class="error">{{ error }}</p>
+{% endif %}
+<h3>{{ heading or program.title }}</h3>
+{% if ai_run %}
+  <p class="muted">
+    AI run status: {{ ai_run.status }} - prompt {{ ai_run.prompt_version }} - schema {{ ai_run.schema_version }}
+    {% if ai_run.methodology_version %} - methodology {{ ai_run.methodology_version }}{% endif %}
+    {% if ai_run.model_name %} - model {{ ai_run.model_name }}{% endif %}
+  </p>
+{% endif %}
+{% if prompt %}
+  <form method="post" action="{{ form_action or ('/internal/programs/' ~ program.id ~ '/prompt') }}" class="stack">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {% if ai_run %}<input type="hidden" name="ai_run_id" value="{{ ai_run.id }}">{% endif %}
+    {% if scope %}<input type="hidden" name="scope" value="{{ scope }}">{% endif %}
+    <textarea name="prompt_text" rows="24" required>{{ prompt }}</textarea>
+    <button type="submit">{{ submit_label or "Save prompt and paste JSON" }}</button>
+  </form>
+{% endif %}
 {% endblock %}

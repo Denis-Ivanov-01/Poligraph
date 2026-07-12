@@ -22,3 +22,9 @@ def root_admin_required(user: dict = Depends(current_internal_user)) -> dict:
     if user["role"] not in {"root_admin", "admin"}:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Root Admin only")
     return user
+
+
+def moderator_required(user: dict = Depends(current_internal_user)) -> dict:
+    if user["role"] not in {"root_admin", "admin", "moderator"}:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Moderator access required")
+    return user

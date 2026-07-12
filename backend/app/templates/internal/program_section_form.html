@@ -1,0 +1,28 @@
+{% extends "internal/base.html" %}
+{% block content %}
+<h2>{{ "Edit section" if section else "New section" }}</h2>
+<p class="muted">Update section narrative and structure fields. Sections do not receive implementation statuses; commitment analyses are handled separately.</p>
+<form method="post" action="{{ form_action }}" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+  {% if not section %}<input type="hidden" name="program_id" value="{{ program.id }}">{% endif %}
+  <label>Parent section
+    <select name="parent_section_id">
+      <option value="">Top level</option>
+      {% for item in parent_options %}
+        <option value="{{ item.id }}" {% if parent_section_id == item.id %}selected{% endif %}>{{ item.section_code or '' }} {{ item.title }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Section code <input name="section_code" value="{{ (section.section_code or '') if section else '' }}"></label>
+  <label>Title <input name="title" value="{{ section.title if section else '' }}" required></label>
+  <label>Original heading <input name="original_heading" value="{{ (section.original_heading or '') if section else '' }}"></label>
+  <label>Original text <textarea name="original_text" rows="8">{{ (section.original_text or '') if section else '' }}</textarea></label>
+  <label>Summary <textarea name="summary" rows="5">{{ (section.summary or '') if section else '' }}</textarea></label>
+  <label>Problem description <textarea name="problem_description" rows="5">{{ (section.problem_description or '') if section else '' }}</textarea></label>
+  {% if section %}<label>Aggregate commitment-status summary <textarea name="aggregate_status_summary" rows="5">{{ section.aggregate_status_summary or '' }}</textarea></label>{% endif %}
+  <label>Policy area <input name="policy_area" value="{{ (section.policy_area or '') if section else '' }}"></label>
+  <label>Display order <input type="number" name="display_order" value="{{ (section.display_order or 0) if section else 0 }}"></label>
+  <button type="submit">Save section</button>
+</form>
+<p><a href="/internal/programs/{{ program.id }}/preview">Back to program editing</a></p>
+{% endblock %}

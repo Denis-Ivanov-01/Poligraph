@@ -3,6 +3,7 @@
 <h2>{{ form_title }}</h2>
 {% if commitment and commitment.program_id %}
   <p><a href="/internal/programs/{{ commitment.program_id }}/preview">Back to program preview</a></p>
+  <p><a href="/internal/programs/commitments/{{ commitment.id }}/status-prompt">Generate commitment status prompt</a></p>
 {% endif %}
 <form method="post" action="{{ form_action }}" class="stack">
   <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -10,6 +11,16 @@
     <select name="program_id" required>
       {% for program in programs %}
         <option value="{{ program.id }}" {% if commitment and commitment.program_id == program.id %}selected{% endif %}>{{ program.title }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Program section
+    <select name="program_section_id">
+      <option value="">No section</option>
+      {% for section in sections %}
+        <option value="{{ section.id }}" {% if commitment and commitment.program_section_id == section.id %}selected{% endif %}>
+          {{ section.program.title }} / {{ section.section_code or '' }} {{ section.title }}
+        </option>
       {% endfor %}
     </select>
   </label>
@@ -32,6 +43,50 @@
   <label>Period <input name="period" value="{{ commitment.period if commitment and commitment.period else '' }}"></label>
   <label>Deadline <input type="date" name="deadline" value="{{ commitment.deadline if commitment and commitment.deadline else '' }}"></label>
   <label>Measurable criteria <textarea name="measurable_criteria">{{ commitment.measurable_criteria if commitment and commitment.measurable_criteria else '' }}</textarea></label>
+  <label>Тип ангажимент
+    <select name="commitment_type">
+      <option value="">Не е зададен</option>
+      {% for key, label in commitment_types.items() %}
+        <option value="{{ key }}" {% if commitment and commitment.commitment_type == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Предмет на обещанието
+    <select name="promised_item_type">
+      <option value="">Не е зададен</option>
+      {% for key, label in commitment_types.items() %}
+        <option value="{{ key }}" {% if commitment and commitment.promised_item_type == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Изходна ситуация
+    <select name="baseline_mode">
+      <option value="">Не е зададена</option>
+      {% for key, label in baseline_modes.items() %}
+        <option value="{{ key }}" {% if commitment and commitment.baseline_mode == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Зависими външни участници <textarea name="required_external_actors">{{ commitment.required_external_actors if commitment and commitment.required_external_actors else '' }}</textarea></label>
+  <label>Степен на контрол
+    <select name="control_level">
+      <option value="">Не е зададена</option>
+      {% for key, label in control_levels.items() %}
+        <option value="{{ key }}" {% if commitment and commitment.control_level == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Основа за оценката <textarea name="evaluation_basis">{{ commitment.evaluation_basis if commitment and commitment.evaluation_basis else '' }}</textarea></label>
+  <label>Количествена цел <textarea name="quantitative_target">{{ commitment.quantitative_target if commitment and commitment.quantitative_target else '' }}</textarea></label>
+  <label>Реално постигнато по индикатора <textarea name="quantitative_actual">{{ commitment.quantitative_actual if commitment and commitment.quantitative_actual else '' }}</textarea></label>
+  <label>Текуща валидност на мярката
+    <select name="measure_validity_status">
+      <option value="">Не е зададена</option>
+      {% for key, label in measure_validity_statuses.items() %}
+        <option value="{{ key }}" {% if commitment and commitment.measure_validity_status == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
   <label>Status
     <select name="status">
       {% for key, meta in statuses.items() %}
@@ -48,26 +103,84 @@
     </select>
   </label>
   <label>Confidence explanation <textarea name="confidence_explanation">{{ commitment.confidence_explanation if commitment and commitment.confidence_explanation else '' }}</textarea></label>
+  <label>Принос на кабинета
+    <select name="contribution_level">
+      {% for key, meta in contribution_levels.items() %}
+        <option value="{{ key }}" {% if commitment and commitment.contribution_level == key %}selected{% endif %}>{{ meta.label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Обяснение за приноса <textarea name="contribution_explanation">{{ commitment.contribution_explanation if commitment and commitment.contribution_explanation else '' }}</textarea></label>
+  <label>Увереност в приноса
+    <select name="contribution_confidence">
+      <option value="">Няма</option>
+      {% for key, label in confidence_levels.items() %}
+        <option value="{{ key }}" {% if commitment and commitment.contribution_confidence == key %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Видове принос <textarea name="contribution_types">{{ commitment.contribution_types_text if commitment and commitment.contribution_types_text else '' }}</textarea></label>
+  <label>Официална промяна в програмата <textarea name="official_program_change_note">{{ commitment.official_program_change_note if commitment and commitment.official_program_change_note else '' }}</textarea></label>
+  <label>Версия или бележка за източника <textarea name="source_version_note">{{ commitment.source_version_note if commitment and commitment.source_version_note else '' }}</textarea></label>
+  <label>Важност
+    <select name="importance_level">
+      {% for key, meta in importance_levels.items() %}
+        <option value="{{ key }}" {% if commitment and commitment.importance_level == key %}selected{% endif %}>{{ meta.label }} ({{ meta.weight }})</option>
+      {% endfor %}
+    </select>
+  </label>
+  <p class="muted">Тежестта се изчислява автоматично: ключов = 3, стандартен = 2, технически = 1.</p>
   <label>Last status update <input type="date" name="last_status_update" value="{{ commitment.last_status_update if commitment and commitment.last_status_update else '' }}"></label>
   <label>Display order <input type="number" name="display_order" value="{{ commitment.display_order if commitment else 0 }}"></label>
   <label class="checkbox-row"><input type="checkbox" name="is_key_commitment" value="1" {% if commitment and commitment.is_key_commitment %}checked{% endif %}> Key commitment</label>
   <label class="checkbox-row"><input type="checkbox" name="is_published" value="1" {% if commitment and commitment.is_published %}checked{% endif %}> Published</label>
   <button type="submit">Save</button>
 </form>
+{% if commitment and not commitment.program.is_published %}
+  <form method="post" action="/internal/programs/commitments/{{ commitment.id }}/delete" onsubmit="return confirm('Да се изтрие ли този ангажимент?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="submit">Изтриване на ангажимента</button>
+  </form>
+{% endif %}
 
 {% if commitment %}
   <section class="panel">
+    <h3>История на статуса</h3>
+    <p class="muted">„Не е анализирано“ означава липса на успешен анализ. „Неясен след анализ“ означава, че е направено проучване без стабилен извод.</p>
+    <table>
+      <tr><th>Дата</th><th>Предишен статус</th><th>Нов статус</th><th>Принос</th><th>Обяснение</th><th>Произход</th><th>Фактологична проверка</th></tr>
+      {% for update in commitment.status_updates|sort(attribute="created_at", reverse=true) %}
+        <tr>
+          <td>{{ update.effective_date or update.created_at }}</td>
+          <td>{{ statuses[update.previous_status].label if update.previous_status in statuses else update.previous_status or "—" }}</td>
+          <td>{{ statuses[update.new_status].label if update.new_status in statuses else update.new_status }}</td>
+          <td>{{ contribution_levels[update.new_contribution_level].label if update.new_contribution_level in contribution_levels else update.new_contribution_level or "—" }}</td>
+          <td>{{ update.status_explanation or "" }}</td>
+          <td>{{ "AI генериран анализ" if update.source_origin == "ai_imported" else update.source_origin }}</td>
+          <td>{{ update.factual_review_status }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="7">Ангажиментът все още не е анализиран.</td></tr>
+      {% endfor %}
+    </table>
+  </section>
+  <section class="panel">
     <h3>Evidence</h3>
     <table>
-      <tr><th>Title</th><th>Type</th><th>Publisher</th><th>Actions</th></tr>
+      <tr><th>Title</th><th>Type</th><th>Relation</th><th>Note</th><th>Роля</th><th>Сила</th><th>Factual review</th><th>Publisher</th><th>Actions</th></tr>
       {% for item in commitment.evidence %}
         <tr>
           <td>{% if item.url %}<a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>{% else %}{{ item.title }}{% endif %}</td>
           <td>{{ evidence_source_types[item.source_type] if item.source_type in evidence_source_types else item.source_type }}</td>
+          <td>{{ item.relation_type }}</td>
+          <td>{{ item.note or "—" }}</td>
+          <td>{{ evidence_roles[item.evidence_role] if item.evidence_role in evidence_roles else item.evidence_role or "—" }}</td>
+          <td>{{ evidence_strengths[item.evidence_strength] if item.evidence_strength in evidence_strengths else item.evidence_strength or "—" }}</td>
+          <td>{{ item.factual_review_status }}</td>
           <td>{{ item.publisher or "None" }}</td>
           <td>
             <a href="/internal/programs/commitments/{{ commitment.id }}/evidence/{{ item.id }}/edit">Edit</a>
-            <form method="post" action="/internal/programs/commitments/{{ commitment.id }}/evidence/{{ item.id }}/delete" class="inline">
+            <form method="post" action="/internal/programs/commitments/{{ commitment.id }}/evidence/{{ item.id }}/delete" class="inline" onsubmit="return confirm('Да се премахне ли този източник от ангажимента?')">
               <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
               <button type="submit">Delete</button>
             </form>
@@ -91,7 +204,40 @@
       <label>Published date <input type="date" name="published_at"></label>
       <label>Relevant excerpt <textarea name="quote_or_relevant_excerpt"></textarea></label>
       <label>Description <textarea name="description"></textarea></label>
-      <label class="checkbox-row"><input type="checkbox" name="supports_status" value="1" checked> Supports current status</label>
+      <label>Evidence relation
+        <select name="relation_type">
+          <option value="supports_status">Supports status</option>
+          <option value="contradicts_status">Contradicts status</option>
+          <option value="contextualizes">Contextualizes</option>
+          <option value="proves_completion">Proves completion</option>
+          <option value="proves_delay">Proves delay</option>
+          <option value="proves_violation">Proves violation</option>
+          <option value="supports_contribution">Supports contribution</option>
+          <option value="contradicts_contribution">Contradicts contribution</option>
+          <option value="background">Background</option>
+        </select>
+      </label>
+      <label>Роля на източника
+        <select name="evidence_role">
+          <option value="">Не е зададена</option>
+          {% for key, label in evidence_roles.items() %}
+            <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Сила на доказателството
+        <select name="evidence_strength">
+          <option value="">Не е зададена</option>
+          {% for key, label in evidence_strengths.items() %}
+            <option value="{{ key }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label class="checkbox-row"><input type="checkbox" name="is_self_reported" value="1"> Самоотчетен източник</label>
+      <label class="checkbox-row"><input type="checkbox" name="is_independent_confirmation" value="1"> Независимо потвърждение</label>
+      <label class="checkbox-row"><input type="checkbox" name="is_contradictory" value="1"> Противоречив източник</label>
+      <label class="checkbox-row"><input type="checkbox" name="is_disproven" value="1"> Опроверган източник</label>
+      <label>Ограничения <textarea name="limitations"></textarea></label>
       <button type="submit">Add evidence</button>
     </form>
   </section>

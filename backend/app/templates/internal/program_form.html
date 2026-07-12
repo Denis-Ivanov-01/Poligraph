@@ -25,21 +25,23 @@
     </select>
   </label>
   <label>Coalition name <input name="related_coalition_name" value="{{ program.related_coalition_name if program and program.related_coalition_name else '' }}"></label>
+  <label>Period text <input name="period_text" value="{{ program.period_text if program and program.period_text else '' }}"></label>
   <label>Period start <input type="date" name="period_start" value="{{ program.period_start if program and program.period_start else '' }}"></label>
   <label>Period end <input type="date" name="period_end" value="{{ program.period_end if program and program.period_end else '' }}"></label>
+  <label>Publication date <input type="date" name="publication_date" value="{{ program.publication_date if program and program.publication_date else '' }}"></label>
   <label>Source URL <input name="source_url" value="{{ program.source_url if program and program.source_url else '' }}"></label>
   <label>Source title <input name="source_title" value="{{ program.source_title if program and program.source_title else '' }}"></label>
-  <label>Source description or pasted program text <textarea name="source_description" rows="10">{{ program.source_description if program and program.source_description else '' }}</textarea></label>
+  <label>Source description or pasted full program text <textarea name="source_description" rows="12">{{ program.source_description if program and program.source_description else '' }}</textarea></label>
+  <p class="muted">For structure extraction, pasted full text is best. If you leave it empty, provide a source URL or enough metadata for a web-enabled AI model to find the official program.</p>
+  <label>Internal notes <textarea name="internal_notes">{{ program.internal_notes if program and program.internal_notes else '' }}</textarea></label>
   {% if program %}
     <section class="panel">
-      <h3>AI prompt and response</h3>
-      <p class="muted">Editing the JSON response replaces the imported commitments for this program.</p>
-      <label>Generated prompt
-        <textarea name="generated_prompt_text" rows="16">{{ program.generated_prompt_text or '' }}</textarea>
-      </label>
-      <label>Raw AI JSON response
-        <textarea name="raw_ai_response" rows="18">{{ program.raw_ai_response or '' }}</textarea>
-      </label>
+      <h3>AI workflow</h3>
+      <p class="muted">Use scoped AI runs for structure extraction and commitment status analysis. AI output receives structural review only.</p>
+      <p>
+        <a href="/internal/programs/{{ program.id }}/prompt">Generate structure prompt</a>
+        <a href="/internal/programs/{{ program.id }}/preview">Open structure editor</a>
+      </p>
     </section>
   {% endif %}
   <label class="checkbox-row"><input type="checkbox" name="is_active_government_program" value="1" {% if program and program.is_active_government_program %}checked{% endif %}> Active government program</label>
