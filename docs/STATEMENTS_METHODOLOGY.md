@@ -1,6 +1,6 @@
-# Methodology Rationale
+# Statements Methodology
 
-This document points to the full methodology used by the public platform.
+This document points to the methodology used for public statement analysis.
 
 The current methodology content lives in:
 
@@ -8,7 +8,7 @@ The current methodology content lives in:
 
 That file is rendered by the public methodology page and is currently the canonical editable methodology resource for the application.
 
-The methodology explains:
+The statement methodology explains:
 
 - the four evaluation dimensions;
 - how factual claims are separated from opinions, promises, and predictions;
@@ -18,4 +18,4 @@ The methodology explains:
 - correction and transparency principles;
 - source standards and evidence expectations.
 
-The methodology should remain readable for the public, not only for developers. If this repository later moves the methodology into `docs/` as the canonical source, this file should be updated to point to that location.
+Statement methodology should remain readable for the public, not only for developers. If this repository later moves the methodology into `docs/` as the canonical source, this file should be updated to point to that location.

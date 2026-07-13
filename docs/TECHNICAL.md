@@ -20,7 +20,7 @@
 
 Political AI Filter is an open-source civic-tech monorepo with two main surfaces:
 
-- a public read-only React application for browsing analyzed political statements, politicians, parties, rankings, methodology, and transparency information;
+- a public read-only React application for browsing analyzed political statements, political programs, commitments, politicians, parties, rankings, methodology, and transparency information;
 - an internal FastAPI/Jinja2 moderation and administration interface for trusted users.
 
 The repository also includes editable public content, shared resource files, Docker-based local infrastructure, and an optional internal analytics diagnostics panel.
@@ -49,11 +49,12 @@ The public React app currently includes routes for:
 - `/parties` and `/parties/:slug`;
 - `/politicians` and `/politicians/:slug`;
 - `/statements` and `/statements/:id`;
+- `/programs`, `/programs/:id`, `/programs/:programId/commitments/:slug`, and `/programs/commitments/:slug`;
 - `/methodology`;
 - `/search`;
 - `*` - not-found page.
 
-The public API includes routers for dashboard data, parties, politicians, statements, and search.
+The public API includes routers for dashboard data, parties, politicians, programs, statements, and search.
 
 ### Internal moderator/admin routes
 
@@ -63,6 +64,7 @@ The backend includes internal routes under `/internal`, including:
 - party management;
 - politician management;
 - statement creation/editing;
+- program, section, and commitment management;
 - AI prompt and JSON workflow;
 - moderator management;
 - audit logs;
@@ -98,7 +100,7 @@ Configuration is loaded through `backend/app/config.py` using Pydantic settings.
 
 ## Analysis Data Flow
 
-The intended analysis workflow is:
+The intended statement analysis workflow is:
 
 1. A moderator adds the source and raw statement text.
 2. The system stores the original text and statement metadata.
@@ -112,6 +114,8 @@ The intended analysis workflow is:
 
 Raw prompt/instruction text and raw model responses should be preserved for auditability. Public statement detail pages can then show how a published analysis was produced, instead of presenting only final scores.
 
+Political program analysis uses a separate workflow for program structure and commitment status. Moderators can generate prompts, import validated AI JSON, review section and commitment structure, process commitment analysis in batches, and publish reviewed programs and commitments. The detailed program workflow is documented in [`docs/program_commitment_analysis_v6.md`](./program_commitment_analysis_v6.md).
+
 ## Content and Localization
 
 The project uses file-backed content/resources so that copy can be edited without rewriting business logic.
@@ -121,6 +125,8 @@ The project uses file-backed content/resources so that copy can be edited withou
 - Backend resources: `backend/app/resources.json`
 - Backend resource accessor: `backend/app/resources.py`
 - Methodology long-form content: `frontend/src/content/methodology.bg.md`
+- Statement methodology notes: `docs/STATEMENTS_METHODOLOGY.md`
+- Political program methodology notes: `docs/PPROGRAMS_METHODOLOGY.md`
 
 Short UI strings should generally go into `resources.json`. Long public editorial content should remain in Markdown or another dedicated content file.
 
@@ -248,12 +254,28 @@ Do not commit real secrets. Internal moderation credentials, AI API keys, analyt
 
 ## Local Development
 
-From the repository root:
+This quick start is Windows-oriented and assumes Docker Desktop is installed and running.
 
-```bash
-cp .env.example .env
+### Prerequisites
+
+- Git
+- Docker Desktop
+
+Clone the repository:
+
+```powershell
+git clone https://github.com/Denis-Ivanov-01/Poligraph.git
+cd Poligraph
+```
+
+Copy the example environment file and start the local Docker stack:
+
+```powershell
+Copy-Item .env.example .env
 docker compose up --build
 ```
+
+The first start builds the backend and frontend images, starts PostgreSQL, Redis, Umami, and both app services, then runs Alembic migrations before Uvicorn starts.
 
 Local services:
 
@@ -261,7 +283,21 @@ Local services:
 - Public frontend: `http://localhost:5173`
 - Internal app: `http://localhost:8000/internal`
 - Umami: `http://localhost:3000`
-- Diagnostics panel: `http://localhost:8000/diagnostics_panel`
+- Diagnostics panel: `http://localhost:8000/diagnostics_panel` when `DIAGNOSTICS_PANEL_ENABLED=true`
+
+Internal development login defaults are configured in `docker-compose.yml`:
+
+- Username: `admin`
+- Password: `admin`
+
+Useful Docker commands from the repository root:
+
+```powershell
+docker compose ps
+docker compose logs backend
+docker compose up -d backend
+docker compose down
+```
 
 Frontend commands from `frontend/`:
 
@@ -325,5 +361,6 @@ DIAGNOSTICS_DASHBOARD_URL=https://your-umami-domain.example.com/share/your-share
 ## Documentation Links
 
 - [Root README](../README.md)
-- [Methodology rationale](./METHODOLOGY.md)
+- [Statements methodology](./STATEMENTS_METHODOLOGY.md)
+- [Political programs methodology](./PPROGRAMS_METHODOLOGY.md)
 - [Public methodology content](../frontend/src/content/methodology.bg.md)

@@ -1,15 +1,17 @@
 # Political AI Filter
 
-Political AI Filter is an open-source civic-tech project for transparent AI-assisted analysis of public political statements.
+Political AI Filter is an open-source civic-tech project for transparent AI-assisted analysis of public political statements and political program commitments.
 
-The platform evaluates specific political statements, not politicians as people and not ideologies as "right" or "wrong". It looks at four dimensions:
+For statements, the platform evaluates specific public claims and arguments, not politicians as people and not ideologies as "right" or "wrong". It looks at four dimensions:
 
 - Factual accuracy
 - Logical consistency
 - Communicational integrity
 - Principle consistency
 
-The goal is to make political speech more inspectable. It is not to tell people who to vote for.
+For political programs, the platform extracts commitments, tracks their status, and makes the supporting evidence easier to inspect.
+
+The goal is to make political speech and promises more inspectable. It is not to tell people who to vote for.
 
 ## TODOs
 From system standpoint:
@@ -17,38 +19,46 @@ From system standpoint:
 - Moderator actions must be reversible by the administrator
 - Add contacts page and github repo link in the home page
 - All accessible from the UI methods for import/deleting/other actions must be easily accessible from REST to enable future automation. A better safety-wise alternative is to have a python API without exposing it to REST.
-- All endpoints must be protected by credentials to enable ease of future autiomation while maintaning security.
+- All endpoints must be protected by credentials to enable ease of future automation while maintaining security.
 - All credentials-related stuff must be encrypted.
 - Each list in the internal app (statements, commitments, programs...) must have a checkbox for each item for batch deletion and other actions
 - After mods log in their account, they must be able to change their password from the internal site
 
 From AI workflow standpoint:
-- The political program workflow should support: AI-generated JSON with summaries for all the commitments. Then there should be a dedicated page for each commitment. There must be an option for multiple commitments to be imported all at once.
 - For all entities that have forms for filling out, at the bottom there must be an input box for JSONs so even this can be easily automated.
-- Design a semi automated workflow that allows moderators to track progress on political programs for each goal/sub-goal (commitment). Each modertor will be in charge of multiple things so there must be a (official or unofficial) way to keep track of checked things
+- Design a semi-automated workflow that allows moderators to track progress on political programs for each goal/sub-goal (commitment). Each moderator will be in charge of multiple things, so there must be an official or unofficial way to keep track of checked things.
 
 ## Why this project exists
 
 Political speech often reaches people as a mix of facts, arguments, promises, accusations, framing, and selective context. A statement can contain accurate facts but still lead to a weak conclusion. It can sound confident while leaving out context that matters. It can also be consistent with a politician's earlier position, or quietly depart from it.
 
-This project exists to make public political statements easier to inspect. Instead of asking only whether someone likes a politician or agrees with a party, the platform asks a narrower question: what does this specific public statement give the citizen?
+This project exists to make public political statements and political promises easier to inspect. Instead of asking only whether someone likes a politician or agrees with a party, the platform asks narrower questions: what does this specific public statement give the citizen, and what happened to this specific public commitment?
 
 The aim is not to remove political disagreement. Disagreement is part of democracy. The aim is to help that disagreement start from clearer facts, better arguments, and a more visible record of how each analysis was produced.
 
 ## What the platform evaluates
+
+For statements:
 
 - **Factual accuracy** - are verifiable factual claims supported by reliable evidence?
 - **Logical consistency** - do the conclusions follow from the premises?
 - **Communicational integrity** - is the information presented in a way that does not materially mislead?
 - **Principle consistency** - is the position consistent with previous public positions on the same issue?
 
+For political programs:
+
+- **Commitment structure** - what sections, subsections, and concrete commitments are present?
+- **Implementation status** - what evidence exists that each commitment is fulfilled, in progress, blocked, reversed, or unsupported?
+- **Authority and attribution** - did the political subject have enough control to be responsible for the outcome?
+- **Evidence quality** - are source links, current figures, and contradictory evidence handled transparently?
+
 ## What the platform does not evaluate
 
-The project does not try to decide which ideology is correct, whether a political position is desirable, or whether a politician is a good person. It focuses on something narrower and more inspectable: how a specific public statement is constructed, supported, argued, communicated, and connected to previous positions.
+The project does not try to decide which ideology is correct, whether a political position is desirable, or whether a politician is a good person. It focuses on something narrower and more inspectable: how a specific public statement is constructed, supported, argued, communicated, and connected to previous positions, and how a specific program commitment is evidenced over time.
 
 ## How each analysis is produced
 
-Each published analysis should leave an audit trail:
+Each published statement analysis should leave an audit trail:
 
 1. The original statement text is copied from a public and verifiable source.
 2. The statement is analyzed using a visible instruction to the AI model.
@@ -59,13 +69,15 @@ Each published analysis should leave an audit trail:
 
 AI models are not perfectly deterministic. The same model can sometimes produce slightly different answers, and different models can differ more. The project does not claim perfect or final automated truth. The goal is a transparent and inspectable process.
 
+Political program analysis follows the same auditability principle. Program structure prompts, commitment-status prompts, raw JSON imports, validation results, and publication steps are kept explicit so large programs can be reviewed in batches without hiding the underlying evidence.
+
 ## Applications included in this repository
 
 This repository includes both the public read-only platform and the internal moderator/admin interface.
 
 ### Public platform
 
-The public platform is a read-only interface for browsing analyzed statements, politicians, parties, rankings, methodology, and transparency information.
+The public platform is a read-only interface for browsing analyzed statements, political programs, commitments, politicians, parties, rankings, methodology, and transparency information.
 
 ### Internal moderation interface
 
@@ -74,6 +86,7 @@ The internal interface is a web application for trusted administrators and moder
 - managing parties;
 - managing politicians;
 - adding statement sources and raw statement text;
+- importing and reviewing political programs, sections, and commitments;
 - generating or storing AI analysis results;
 - reviewing raw model outputs;
 - approving or rejecting analyses before publication.
@@ -83,12 +96,13 @@ The internal interface is not intended for public access and must be protected i
 ## Documentation
 
 - [Technical documentation](./docs/TECHNICAL.md)
-- [Methodology rationale](./docs/METHODOLOGY.md)
+- [Statements methodology](./docs/STATEMENTS_METHODOLOGY.md)
+- [Political programs methodology](./docs/PPROGRAMS_METHODOLOGY.md)
 - [Program commitment analysis workflow](./docs/program_commitment_analysis_v6.md)
 
 The technical documentation covers architecture, setup, data flow, environment variables, moderation workflow, and deployment assumptions.
 
-The methodology rationale covers the evaluation criteria, the role of AI, limitations, uncertainty handling, correction policy, and source standards.
+The methodology documents cover statement evaluation criteria, program commitment analysis, the role of AI, limitations, uncertainty handling, correction policy, and source standards.
 
 ## Future Development Directions
 
@@ -127,13 +141,13 @@ This section reflects the current implementation and should be updated as the ar
 
 Copy the example environment file:
 
-```bash
-cp .env.example .env
+```powershell
+Copy-Item .env.example .env
 ```
 
 Start the local stack:
 
-```bash
+```powershell
 docker compose up --build
 ```
 
@@ -142,6 +156,8 @@ Local services:
 - Backend API: `http://localhost:8000`
 - Public frontend: `http://localhost:5173`
 - Internal app: `http://localhost:8000/internal`
+- Umami: `http://localhost:3000`
+- Diagnostics panel: `http://localhost:8000/diagnostics_panel` when enabled
 
 The frontend can also be run from `frontend/`:
 
@@ -187,11 +203,12 @@ The project is in early development.
 
 Current priorities include:
 
-- public statement pages;
+- public statement and program pages;
 - politician and party pages;
 - transparent AI analysis workflow;
 - methodology page;
 - internal moderation workflow;
+- program and commitment review workflow;
 - score aggregation and ranking logic;
 - source and evidence traceability.
 
