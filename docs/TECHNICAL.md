@@ -272,7 +272,7 @@ Copy the example environment file and start the local Docker stack:
 
 ```powershell
 Copy-Item .env.example .env
-docker compose up --build
+docker compose up --build -d
 ```
 
 The first start builds the backend and frontend images, starts PostgreSQL, Redis, Umami, and both app services, then runs Alembic migrations before Uvicorn starts.
