@@ -1,6 +1,7 @@
 .env
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
 .ruff_cache/
 .venv/
@@ -10,3 +11,4 @@ media/
 postgres_data/
 redis_data/
 graphify-out/
+.local-dev/

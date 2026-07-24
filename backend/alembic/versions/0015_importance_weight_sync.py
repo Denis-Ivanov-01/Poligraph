@@ -36,13 +36,21 @@ def upgrade() -> None:
     )
     op.execute(
         """
-        ALTER TABLE commitments
-        ADD CONSTRAINT ck_commitments_importance_level_weight
-        CHECK (
-            (importance_level = 'key' AND importance_weight = 3)
-            OR (importance_level = 'standard' AND importance_weight = 2)
-            OR (importance_level = 'technical' AND importance_weight = 1)
-        )
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint
+                WHERE conname = 'ck_commitments_importance_level_weight'
+            ) THEN
+                ALTER TABLE commitments
+                ADD CONSTRAINT ck_commitments_importance_level_weight
+                CHECK (
+                    (importance_level = 'key' AND importance_weight = 3)
+                    OR (importance_level = 'standard' AND importance_weight = 2)
+                    OR (importance_level = 'technical' AND importance_weight = 1)
+                );
+            END IF;
+        END $$;
         """
     )
 

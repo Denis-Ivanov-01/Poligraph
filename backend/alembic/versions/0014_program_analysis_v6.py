@@ -17,52 +17,69 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("ai_runs", sa.Column("methodology_version", sa.String(length=80), nullable=True))
-    op.add_column("ai_runs", sa.Column("parent_ai_run_id", postgresql.UUID(as_uuid=True), nullable=True))
-    op.add_column("ai_runs", sa.Column("batch_item_ref", sa.String(length=80), nullable=True))
-    op.add_column("ai_runs", sa.Column("batch_position", sa.Integer(), nullable=True))
-    op.add_column("ai_runs", sa.Column("expected_item_count", sa.Integer(), nullable=False, server_default="0"))
-    op.add_column("ai_runs", sa.Column("completed_item_count", sa.Integer(), nullable=False, server_default="0"))
-    op.add_column("ai_runs", sa.Column("failed_item_count", sa.Integer(), nullable=False, server_default="0"))
-    op.add_column("ai_runs", sa.Column("human_review_item_count", sa.Integer(), nullable=False, server_default="0"))
-    op.add_column("ai_runs", sa.Column("retry_count", sa.Integer(), nullable=False, server_default="0"))
-    op.add_column("ai_runs", sa.Column("validation_errors", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column("ai_runs", sa.Column("telemetry", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column("ai_runs", sa.Column("input_tokens", sa.Integer(), nullable=True))
-    op.add_column("ai_runs", sa.Column("output_tokens", sa.Integer(), nullable=True))
-    op.add_column("ai_runs", sa.Column("tool_call_count", sa.Integer(), nullable=True))
-    op.create_foreign_key("fk_ai_runs_parent_ai_run_id", "ai_runs", "ai_runs", ["parent_ai_run_id"], ["id"])
-    op.create_index("ix_ai_runs_parent_ai_run_id", "ai_runs", ["parent_ai_run_id"])
-    op.create_index("ix_ai_runs_batch_item_ref", "ai_runs", ["batch_item_ref"])
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS methodology_version VARCHAR(80)")
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS parent_ai_run_id UUID")
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS batch_item_ref VARCHAR(80)")
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS batch_position INTEGER")
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS expected_item_count INTEGER NOT NULL DEFAULT 0")
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS completed_item_count INTEGER NOT NULL DEFAULT 0")
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS failed_item_count INTEGER NOT NULL DEFAULT 0")
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS human_review_item_count INTEGER NOT NULL DEFAULT 0")
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS retry_count INTEGER NOT NULL DEFAULT 0")
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS validation_errors JSONB")
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS telemetry JSONB")
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS input_tokens INTEGER")
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS output_tokens INTEGER")
+    op.execute("ALTER TABLE ai_runs ADD COLUMN IF NOT EXISTS tool_call_count INTEGER")
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_constraint
+                WHERE conrelid = 'ai_runs'::regclass
+                  AND contype = 'f'
+                  AND conkey = ARRAY[(SELECT attnum FROM pg_attribute WHERE attrelid = 'ai_runs'::regclass AND attname = 'parent_ai_run_id')]
+            ) THEN
+                ALTER TABLE ai_runs
+                ADD CONSTRAINT fk_ai_runs_parent_ai_run_id
+                FOREIGN KEY (parent_ai_run_id) REFERENCES ai_runs(id);
+            END IF;
+        END $$;
+        """
+    )
+    op.execute("CREATE INDEX IF NOT EXISTS ix_ai_runs_parent_ai_run_id ON ai_runs (parent_ai_run_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_ai_runs_batch_item_ref ON ai_runs (batch_item_ref)")
 
-    op.add_column("commitments", sa.Column("material_components", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column("commitments", sa.Column("baseline_explanation", sa.Text(), nullable=True))
-    op.add_column("commitments", sa.Column("control_level_explanation", sa.Text(), nullable=True))
-    op.add_column("commitments", sa.Column("formal_implementation_status", sa.String(length=40), nullable=True))
-    op.add_column("commitments", sa.Column("material_implementation_status", sa.String(length=40), nullable=True))
-    op.add_column("commitments", sa.Column("conclusion_basis", sa.String(length=40), nullable=True))
-    op.add_column("commitments", sa.Column("missing_or_uncertain_evidence", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column("commitments", sa.Column("contribution_counterfactual", sa.Text(), nullable=True))
-    op.add_column("commitments", sa.Column("contribution_applies_to_component_refs", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column("commitments", sa.Column("quantitative_actual_as_of", sa.Date(), nullable=True))
-    op.add_column("commitments", sa.Column("human_review_recommended", sa.Boolean(), nullable=False, server_default=sa.false()))
-    op.add_column("commitments", sa.Column("human_review_reasons", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column("commitments", sa.Column("analysis_quality_flags", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column("commitments", sa.Column("analysis_methodology_version", sa.String(length=80), nullable=True))
-    op.create_index("ix_commitments_formal_implementation_status", "commitments", ["formal_implementation_status"])
-    op.create_index("ix_commitments_material_implementation_status", "commitments", ["material_implementation_status"])
-    op.create_index("ix_commitments_conclusion_basis", "commitments", ["conclusion_basis"])
-    op.create_index("ix_commitments_human_review_recommended", "commitments", ["human_review_recommended"])
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS material_components JSONB")
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS baseline_explanation TEXT")
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS control_level_explanation TEXT")
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS formal_implementation_status VARCHAR(40)")
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS material_implementation_status VARCHAR(40)")
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS conclusion_basis VARCHAR(40)")
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS missing_or_uncertain_evidence JSONB")
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS contribution_counterfactual TEXT")
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS contribution_applies_to_component_refs JSONB")
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS quantitative_actual_as_of DATE")
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS human_review_recommended BOOLEAN NOT NULL DEFAULT false")
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS human_review_reasons JSONB")
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS analysis_quality_flags JSONB")
+    op.execute("ALTER TABLE commitments ADD COLUMN IF NOT EXISTS analysis_methodology_version VARCHAR(80)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_commitments_formal_implementation_status ON commitments (formal_implementation_status)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_commitments_material_implementation_status ON commitments (material_implementation_status)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_commitments_conclusion_basis ON commitments (conclusion_basis)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_commitments_human_review_recommended ON commitments (human_review_recommended)")
 
-    op.add_column("commitment_status_updates", sa.Column("material_components", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column("commitment_status_updates", sa.Column("missing_or_uncertain_evidence", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column("commitment_status_updates", sa.Column("human_review_recommended", sa.Boolean(), nullable=False, server_default=sa.false()))
-    op.add_column("commitment_status_updates", sa.Column("human_review_reasons", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column("commitment_status_updates", sa.Column("analysis_quality_flags", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
-    op.add_column("commitment_status_updates", sa.Column("methodology_version", sa.String(length=80), nullable=True))
+    op.execute("ALTER TABLE commitment_status_updates ADD COLUMN IF NOT EXISTS material_components JSONB")
+    op.execute("ALTER TABLE commitment_status_updates ADD COLUMN IF NOT EXISTS missing_or_uncertain_evidence JSONB")
+    op.execute("ALTER TABLE commitment_status_updates ADD COLUMN IF NOT EXISTS human_review_recommended BOOLEAN NOT NULL DEFAULT false")
+    op.execute("ALTER TABLE commitment_status_updates ADD COLUMN IF NOT EXISTS human_review_reasons JSONB")
+    op.execute("ALTER TABLE commitment_status_updates ADD COLUMN IF NOT EXISTS analysis_quality_flags JSONB")
+    op.execute("ALTER TABLE commitment_status_updates ADD COLUMN IF NOT EXISTS methodology_version VARCHAR(80)")
 
-    op.add_column("commitment_evidence_links", sa.Column("claim_text", sa.Text(), nullable=True))
-    op.add_column("commitment_evidence_links", sa.Column("component_refs", postgresql.JSONB(astext_type=sa.Text()), nullable=True))
+    op.execute("ALTER TABLE commitment_evidence_links ADD COLUMN IF NOT EXISTS claim_text TEXT")
+    op.execute("ALTER TABLE commitment_evidence_links ADD COLUMN IF NOT EXISTS component_refs JSONB")
 
 
 def downgrade() -> None:

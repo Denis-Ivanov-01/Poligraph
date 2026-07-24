@@ -277,6 +277,8 @@ docker compose up --build -d
 
 The first start builds the backend and frontend images, starts PostgreSQL, Redis, Umami, and both app services, then runs Alembic migrations before Uvicorn starts.
 
+For a no-Docker Windows path that uses native PostgreSQL, Python, Node.js, npm, and PowerShell, see [Native Windows localhost development](./NATIVE_WINDOWS_LOCALHOST.md).
+
 Local services:
 
 - Backend API: `http://localhost:8000`

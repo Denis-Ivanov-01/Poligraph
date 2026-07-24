@@ -28,6 +28,9 @@ From AI workflow standpoint:
 - For all entities that have forms for filling out, at the bottom there must be an input box for JSONs so even this can be easily automated.
 - Design a semi-automated workflow that allows moderators to track progress on political programs for each goal/sub-goal (commitment). Each moderator will be in charge of multiple things, so there must be an official or unofficial way to keep track of checked things.
 
+Additional:
+- Infographic representation of methodology - to be researched
+
 ## Why this project exists
 
 Political speech often reaches people as a mix of facts, arguments, promises, accusations, framing, and selective context. A statement can contain accurate facts but still lead to a weak conclusion. It can sound confident while leaving out context that matters. It can also be consistent with a politician's earlier position, or quietly depart from it.
@@ -96,6 +99,7 @@ The internal interface is not intended for public access and must be protected i
 ## Documentation
 
 - [Technical documentation](./docs/TECHNICAL.md)
+- [Native Windows localhost development](./docs/NATIVE_WINDOWS_LOCALHOST.md)
 - [Statements methodology](./docs/STATEMENTS_METHODOLOGY.md)
 - [Political programs methodology](./docs/PPROGRAMS_METHODOLOGY.md)
 - [Program commitment analysis workflow](./docs/program_commitment_analysis_v6.md)
@@ -135,7 +139,7 @@ This section reflects the current implementation and should be updated as the ar
 - **Backend:** FastAPI, SQLAlchemy, Alembic, PostgreSQL, Redis, Jinja2 server-rendered internal pages
 - **Frontend:** React, TypeScript, Vite, React Router
 - **Content:** editable Markdown methodology content rendered in the public frontend
-- **Local development:** Docker Compose
+- **Local development:** Docker Compose or native Windows processes
 
 ## Local development
 
@@ -173,6 +177,22 @@ The backend can also be run from `backend/` after installing the Python package 
 alembic upgrade head
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
+
+### Native Windows localhost development
+
+For Windows machines where Docker Desktop, WSL, Hyper-V, or other virtualization is unavailable or unwanted, use the native PowerShell guide:
+
+- [Native Windows localhost development](./docs/NATIVE_WINDOWS_LOCALHOST.md)
+
+After installing Python, Node.js 20+, npm, and PostgreSQL, the script entrypoints are:
+
+```powershell
+.\scripts\dev-local.ps1 install
+.\scripts\dev-local.ps1 run
+.\scripts\dev-local.ps1 shutdown
+```
+
+Use `.\scripts\dev-local.ps1 install -UpgradeTools` to let the script try to install or upgrade missing/outdated basic tools through `winget`.
 
 ## Environment variables
 

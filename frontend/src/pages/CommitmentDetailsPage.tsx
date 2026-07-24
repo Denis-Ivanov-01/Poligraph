@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
 import { getCommitment, getCommitmentBySlug } from "../api/programs";
@@ -14,6 +15,74 @@ function DetailRow({ label, value }: { label: string; value?: string | null }) {
       <span>{label}</span>
       <strong>{value || text.common.notAvailable}</strong>
     </div>
+  );
+}
+
+type CommitmentAnalysisItem = {
+  key: string;
+  label: string;
+  value?: string | null;
+  explanation?: string | null;
+};
+
+function displayValue(value?: string | null) {
+  return value?.trim() || text.common.notAvailable;
+}
+
+function CommitmentAnalysisPanel({ title, items }: { title: string; items: CommitmentAnalysisItem[] }) {
+  const visibleItems = items.filter((item) => item.value || item.explanation);
+  const [activeKey, setActiveKey] = useState(visibleItems[0]?.key ?? "");
+  const [lockedKey, setLockedKey] = useState<string | null>(null);
+  const activeItem = visibleItems.find((item) => item.key === activeKey) ?? visibleItems[0];
+
+  if (!visibleItems.length || !activeItem) return null;
+
+  function previewItem(key: string) {
+    if (!lockedKey) {
+      setActiveKey(key);
+    }
+  }
+
+  function selectItem(key: string) {
+    if (lockedKey === key) {
+      setLockedKey(null);
+      return;
+    }
+
+    setActiveKey(key);
+    setLockedKey(key);
+  }
+
+  return (
+    <section className="content-panel commitment-analysis-panel">
+      <h2>{title}</h2>
+      <div className="score-grid score-grid-featured score-grid-interactive commitment-analysis-grid" aria-label={title}>
+        {visibleItems.map((item) => (
+          <button
+            className={[
+              "score-item",
+              "score-trigger",
+              activeItem.key === item.key ? "score-item-active" : "",
+              lockedKey === item.key ? "score-item-locked" : ""
+            ].filter(Boolean).join(" ")}
+            key={item.key}
+            type="button"
+            aria-pressed={lockedKey === item.key}
+            onClick={() => selectItem(item.key)}
+            onFocus={() => previewItem(item.key)}
+            onMouseEnter={() => previewItem(item.key)}
+          >
+            <span className="score-label">{item.label}</span>
+            <strong className="commitment-analysis-value">{displayValue(item.value)}</strong>
+          </button>
+        ))}
+      </div>
+      <div className="explanation-panel" aria-live="polite" key={activeItem.key}>
+        <p className="eyebrow">{text.analysis.explanations}</p>
+        <h3>{activeItem.label}</h3>
+        <p>{displayValue(activeItem.explanation || activeItem.value)}</p>
+      </div>
+    </section>
   );
 }
 
@@ -49,6 +118,109 @@ function AiRunMetadataPanel({ metadata }: { metadata?: Commitment["analysis_meta
 
 function CommitmentDetail({ commitment }: { commitment: Commitment }) {
   const location = useLocation();
+  const fulfillmentItems: CommitmentAnalysisItem[] = [
+    {
+      key: "status",
+      label: text.analysis.status,
+      value: commitment.status_label,
+      explanation: commitment.status_explanation
+    },
+    {
+      key: "confidence",
+      label: text.programs.confidenceFilter,
+      value: commitment.confidence_label,
+      explanation: commitment.confidence_explanation
+    },
+    {
+      key: "measurableCriteria",
+      label: text.programs.measurableCriteria,
+      value: commitment.measurable_criteria,
+      explanation: commitment.measurable_criteria
+    },
+    {
+      key: "measureValidity",
+      label: text.programs.measureValidity,
+      value: commitment.measure_validity_label,
+      explanation: commitment.measurable_criteria
+    }
+  ];
+  const contributionItems: CommitmentAnalysisItem[] = [
+    {
+      key: "contribution",
+      label: text.programs.contribution,
+      value: commitment.contribution_label,
+      explanation: commitment.contribution_explanation
+    },
+    {
+      key: "contributionConfidence",
+      label: text.programs.contributionConfidence,
+      value: commitment.contribution_confidence_label,
+      explanation: commitment.contribution_explanation
+    },
+    {
+      key: "controlLevel",
+      label: text.programs.controlLevel,
+      value: commitment.control_level_label,
+      explanation: commitment.control_level_label
+    },
+    {
+      key: "contributionTypes",
+      label: text.programs.contributionTypes,
+      value: commitment.contribution_types,
+      explanation: commitment.contribution_types
+    }
+  ];
+  const contextItems: CommitmentAnalysisItem[] = [
+    {
+      key: "responsibleInstitutions",
+      label: text.programs.responsibleInstitutions,
+      value: commitment.responsible_institutions,
+      explanation: commitment.responsible_institutions
+    },
+    {
+      key: "externalActors",
+      label: text.programs.externalActors,
+      value: commitment.required_external_actors,
+      explanation: commitment.required_external_actors
+    },
+    {
+      key: "baselineMode",
+      label: text.programs.baselineMode,
+      value: commitment.baseline_mode_label,
+      explanation: commitment.baseline_mode_label
+    },
+    {
+      key: "evaluationBasis",
+      label: text.programs.evaluationBasis,
+      value: commitment.evaluation_basis,
+      explanation: commitment.evaluation_basis
+    },
+    {
+      key: "quantitativeTarget",
+      label: text.programs.quantitativeTarget,
+      value: commitment.quantitative_target,
+      explanation: commitment.quantitative_target
+    },
+    {
+      key: "quantitativeActual",
+      label: text.programs.quantitativeActual,
+      value: commitment.quantitative_actual,
+      explanation: commitment.quantitative_actual
+    },
+    {
+      key: "officialProgramChange",
+      label: text.programs.officialProgramChange,
+      value: commitment.official_program_change_note,
+      explanation: commitment.official_program_change_note
+    },
+    {
+      key: "sourceVersionNote",
+      label: text.programs.sourceVersionNote,
+      value: commitment.source_version_note,
+      explanation: commitment.source_version_note
+    }
+  ];
+
   return (
     <article className="commitment-detail">
       <div className="detail-hero">
@@ -85,36 +257,9 @@ function CommitmentDetail({ commitment }: { commitment: Commitment }) {
         <p className="statement-text">{commitment.original_text || text.common.notAvailable}</p>
       </section>
 
-      <section className="analysis-split-panel">
-        <div className="content-panel">
-          <h2>{text.programs.fulfillmentStatus}</h2>
-          <p><strong>{commitment.status_label}:</strong> {commitment.status_explanation || text.common.notAvailable}</p>
-          {commitment.confidence_label ? <p><strong>{commitment.confidence_label}:</strong> {commitment.confidence_explanation || text.common.notAvailable}</p> : null}
-          <p><strong>{text.programs.measurableCriteria}:</strong> {commitment.measurable_criteria || text.common.notAvailable}</p>
-          <p><strong>{text.programs.measureValidity}:</strong> {commitment.measure_validity_label || text.common.notAvailable}</p>
-        </div>
-        <div className="content-panel">
-          <h2>{text.programs.cabinetContribution}</h2>
-          <p><strong>{commitment.contribution_label || text.common.notAvailable}:</strong> {commitment.contribution_explanation || text.common.notAvailable}</p>
-          {commitment.contribution_confidence_label ? (
-          <p><strong>{text.programs.contributionConfidence}:</strong> {commitment.contribution_confidence_label}</p>
-          ) : null}
-          <p><strong>{text.programs.controlLevel}:</strong> {commitment.control_level_label || text.common.notAvailable}</p>
-          <p><strong>{text.programs.contributionTypes}:</strong> {commitment.contribution_types || text.common.notAvailable}</p>
-        </div>
-      </section>
-
-      <section className="content-panel">
-        <h2>{text.programs.evaluationContext}</h2>
-        <p><strong>{text.programs.responsibleInstitutions}:</strong> {commitment.responsible_institutions || text.common.notAvailable}</p>
-        <p><strong>{text.programs.externalActors}:</strong> {commitment.required_external_actors || text.common.notAvailable}</p>
-        <p><strong>{text.programs.baselineMode}:</strong> {commitment.baseline_mode_label || text.common.notAvailable}</p>
-        <p><strong>{text.programs.evaluationBasis}:</strong> {commitment.evaluation_basis || text.common.notAvailable}</p>
-        <p><strong>{text.programs.quantitativeTarget}:</strong> {commitment.quantitative_target || text.common.notAvailable}</p>
-        <p><strong>{text.programs.quantitativeActual}:</strong> {commitment.quantitative_actual || text.common.notAvailable}</p>
-        {commitment.official_program_change_note ? <p><strong>{text.programs.officialProgramChange}:</strong> {commitment.official_program_change_note}</p> : null}
-        {commitment.source_version_note ? <p><strong>{text.programs.sourceVersionNote}:</strong> {commitment.source_version_note}</p> : null}
-      </section>
+      <CommitmentAnalysisPanel title={text.programs.fulfillmentStatus} items={fulfillmentItems} />
+      <CommitmentAnalysisPanel title={text.programs.cabinetContribution} items={contributionItems} />
+      <CommitmentAnalysisPanel title={text.programs.evaluationContext} items={contextItems} />
 
       <section className="source-panel">
         <h2>{text.programs.evidence}</h2>
