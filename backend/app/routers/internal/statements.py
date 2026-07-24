@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from uuid import UUID
 import re
 
@@ -38,14 +38,14 @@ def statement_form_options(db: Session) -> dict:
     return {
         "politicians": politicians,
         "parties": db.scalars(select(PoliticalParty).where(PoliticalParty.is_deleted.is_(False)).order_by(PoliticalParty.full_name)).all(),
-        "politician_latest_party_ids": {str(politician.id): str(latest_party_id(politician) or "") for politician in politicians},
+        "latest_party_id": latest_party_id,
     }
 
 
 def latest_party_id(politician: Politician) -> UUID | None:
     memberships = sorted(
         politician.memberships,
-        key=lambda item: (item.end_date is None, item.end_date or date.max, item.start_date or date.min, item.created_at),
+        key=lambda item: (item.end_date is None, item.end_date or date.max, item.start_date or date.min, item.created_at or datetime.min),
         reverse=True,
     )
     return memberships[0].party_id if memberships else None
@@ -87,7 +87,7 @@ def new_statement(request: Request, user: dict = Depends(current_internal_user),
         "form_action": "/internal/statements",
         "submit_label": "Next",
         "selected_party_id": selected_party_id,
-        "auto_select_party_from_politician": True,
+        "sync_party_from_politician": True,
     }
     context.update(options)
     return render(request, "internal/statement_form.html", context)
@@ -143,6 +143,8 @@ def edit_statement_form(
         "form_note": "Update the draft or published statement fields.",
         "form_action": f"/internal/statements/{statement_id}/edit",
         "submit_label": "Save changes",
+        "selected_party_id": None,
+        "sync_party_from_politician": False,
     }
     context.update(statement_form_options(db))
     return render(request, "internal/statement_form.html", context)
