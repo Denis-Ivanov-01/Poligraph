@@ -29,10 +29,26 @@ def statements_query():
 
 
 def statement_form_options(db: Session) -> dict:
+    politicians = db.scalars(
+        select(Politician)
+        .where(Politician.is_deleted.is_(False))
+        .options(selectinload(Politician.memberships))
+        .order_by(Politician.full_name)
+    ).all()
     return {
-        "politicians": db.scalars(select(Politician).where(Politician.is_deleted.is_(False)).order_by(Politician.full_name)).all(),
+        "politicians": politicians,
         "parties": db.scalars(select(PoliticalParty).where(PoliticalParty.is_deleted.is_(False)).order_by(PoliticalParty.full_name)).all(),
+        "politician_latest_party_ids": {str(politician.id): str(latest_party_id(politician) or "") for politician in politicians},
     }
+
+
+def latest_party_id(politician: Politician) -> UUID | None:
+    memberships = sorted(
+        politician.memberships,
+        key=lambda item: (item.end_date is None, item.end_date or date.max, item.start_date or date.min, item.created_at),
+        reverse=True,
+    )
+    return memberships[0].party_id if memberships else None
 
 
 def _slugify(value: str) -> str:
@@ -61,6 +77,8 @@ def statements(request: Request, user: dict = Depends(current_internal_user), db
 
 @router.get("/new")
 def new_statement(request: Request, user: dict = Depends(current_internal_user), db: Session = Depends(get_db)):
+    options = statement_form_options(db)
+    selected_party_id = latest_party_id(options["politicians"][0]) if options["politicians"] else None
     context = {
         "user": user,
         "statement": None,
@@ -68,8 +86,10 @@ def new_statement(request: Request, user: dict = Depends(current_internal_user),
         "form_note": "This is the initial draft step. The statement is not published from here.",
         "form_action": "/internal/statements",
         "submit_label": "Next",
+        "selected_party_id": selected_party_id,
+        "auto_select_party_from_politician": True,
     }
-    context.update(statement_form_options(db))
+    context.update(options)
     return render(request, "internal/statement_form.html", context)
 
 
