@@ -6,6 +6,7 @@ import pytest
 from app.services.ai_prompt_service import build_statement_prompt
 from app.services.ai_json_validation_service import validate_ai_json
 from app.services.commitment_service import EVIDENCE_SOURCE_TYPES
+from app.services.statement_analysis_service import normalize_ai_source_url
 
 
 def valid_statement_payload():
@@ -117,3 +118,13 @@ def test_statement_prompt_and_validator_use_runtime_evidence_source_types():
         assert result.sources[0]["source_type"] == "temporary_statement_source"
     finally:
         EVIDENCE_SOURCE_TYPES.pop("temporary_statement_source", None)
+
+
+def test_statement_ai_source_url_normalizes_markdown_link():
+    url = "https://example.test/very/long/source"
+    assert normalize_ai_source_url(f"[{url}]({url})", "S1") == url
+
+
+def test_statement_ai_source_url_rejects_values_too_long_for_storage():
+    with pytest.raises(ValueError, match="Source S1 URL is too long"):
+        normalize_ai_source_url("https://example.test/" + ("a" * 1000), "S1")

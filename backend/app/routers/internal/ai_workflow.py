@@ -138,9 +138,24 @@ def save_ai_json(
             {"user": user, "statement": statement, "ai_run": ai_run, "error": str(exc), "raw_json": raw_json},
             status_code=400,
         )
-    analysis = apply_statement_ai_analysis(db, statement, data, raw_json, ai_run.prompt_text)
-    db.add(analysis)
-    db.commit()
+    try:
+        analysis = apply_statement_ai_analysis(db, statement, data, raw_json, ai_run.prompt_text)
+        db.add(analysis)
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        statement = get_statement(db, statement_id)
+        ai_run = latest_or_create_statement_ai_run(db, statement, prompt_text, user)
+        error = f"AI response import failed: {exc}"
+        mark_ai_run_parse_failed(ai_run, raw_json, error)
+        db.commit()
+        write_audit_log(db, request, user, "import_ai_json_failed", "statement", str(statement.id), {"error": error})
+        return render(
+            request,
+            "internal/ai_json.html",
+            {"user": user, "statement": statement, "ai_run": ai_run, "error": error, "raw_json": raw_json},
+            status_code=500,
+        )
     write_audit_log(db, request, user, "parse_ai_json", "statement", str(statement.id), {"valid": True})
     return RedirectResponse(f"/internal/statements/{statement.id}/preview", status_code=303)
 

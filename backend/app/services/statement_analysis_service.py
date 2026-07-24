@@ -1,3 +1,4 @@
+import re
 from datetime import date, datetime, timezone
 from uuid import UUID
 
@@ -9,6 +10,8 @@ from app.models.evidence import EvidenceItem
 from app.models.statement import Statement
 from app.models.statement_claim import StatementClaim, StatementClaimEvidenceLink
 from app.schemas.ai_analysis import AiAnalysisInput
+
+_MARKDOWN_LINK_RE = re.compile(r"^\s*\[[^\]]+\]\((?P<url>[^)]+)\)\s*$")
 
 
 def calculated_overall_score(scores) -> int | None:
@@ -34,6 +37,17 @@ def _parse_date(value: str | None) -> date | None:
         return date.fromisoformat(value)
     except ValueError:
         return None
+
+
+def normalize_ai_source_url(value: str | None, source_ref: str | None = None) -> str:
+    url = (value or "").strip()
+    match = _MARKDOWN_LINK_RE.match(url)
+    if match:
+        url = match.group("url").strip()
+    if len(url) > 1000:
+        label = f" {source_ref}" if source_ref else ""
+        raise ValueError(f"Source{label} URL is too long after cleanup. Store a direct URL, not a Markdown link or extra text.")
+    return url
 
 
 def create_statement_ai_run(
@@ -140,9 +154,10 @@ def apply_statement_ai_analysis(
 
     evidence_by_ref: dict[str, EvidenceItem] = {}
     for source in data.sources:
+        source_ref = source.get("source_ref")
         evidence = EvidenceItem(
             title=source.get("title") or source.get("url") or "Untitled source",
-            url=source.get("url") or "",
+            url=normalize_ai_source_url(source.get("url"), source_ref),
             source_type=source.get("source_type") or "other",
             publisher=source.get("publisher"),
             published_at=_parse_date(source.get("published_at")),
@@ -156,7 +171,6 @@ def apply_statement_ai_analysis(
         )
         db.add(evidence)
         db.flush()
-        source_ref = source.get("source_ref")
         if source_ref:
             evidence_by_ref[source_ref] = evidence
 

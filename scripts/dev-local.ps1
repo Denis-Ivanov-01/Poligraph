@@ -11,7 +11,7 @@ param(
     [int]$TargetNodeMajor = 24,
     [int]$BackendPort = 8000,
     [int]$FrontendPort = 5173,
-    [string]$PostgresServiceName = "postgresql-x64-15",
+    [string]$PostgresServiceName = "",
     [string]$PostgresDataDir = "",
     [string]$NewPostgresAdminPassword = "",
     [switch]$SkipDatabaseSetup,
@@ -178,6 +178,64 @@ function Update-ProcessPath {
     $env:Path = (($paths -split ";") | Where-Object { $_ } | Select-Object -Unique) -join ";"
 }
 
+function Find-PostgresBinDirectory {
+    $psqlCommand = Get-Command "psql" -ErrorAction SilentlyContinue
+    if ($null -ne $psqlCommand) {
+        return Split-Path -Parent $psqlCommand.Source
+    }
+
+    $programRoots = @(
+        [Environment]::GetEnvironmentVariable("ProgramFiles"),
+        [Environment]::GetEnvironmentVariable("ProgramFiles(x86)")
+    ) | Where-Object { $_ }
+
+    foreach ($programRoot in $programRoots) {
+        $postgresRoot = Join-Path $programRoot "PostgreSQL"
+        if (-not (Test-Path $postgresRoot)) {
+            continue
+        }
+
+        $versionDirs = Get-ChildItem -Path $postgresRoot -Directory -ErrorAction SilentlyContinue |
+            Sort-Object { [int]($_.Name -replace "\D", "") } -Descending
+
+        foreach ($versionDir in $versionDirs) {
+            $binDir = Join-Path $versionDir.FullName "bin"
+            if (Test-Path (Join-Path $binDir "psql.exe")) {
+                return $binDir
+            }
+        }
+    }
+
+    return $null
+}
+
+function Add-PostgresBinToProcessPath {
+    $binDir = Find-PostgresBinDirectory
+    if (-not $binDir) {
+        return $false
+    }
+
+    $pathParts = @($env:Path -split ";") | Where-Object { $_ }
+    if ($pathParts -notcontains $binDir) {
+        $env:Path = $binDir + ";" + $env:Path
+        Write-Host "Using PostgreSQL tools from $binDir"
+    }
+
+    return $true
+}
+
+function Assert-PostgresClient {
+    if (Get-Command "psql" -ErrorAction SilentlyContinue) {
+        return
+    }
+
+    Add-PostgresBinToProcessPath | Out-Null
+
+    if (-not (Get-Command "psql" -ErrorAction SilentlyContinue)) {
+        throw "Missing required command 'psql'. Install PostgreSQL 16, or add its bin folder such as 'C:\Program Files\PostgreSQL\16\bin' to PATH, then reopen PowerShell."
+    }
+}
+
 function Test-NodeIsManagedByNvm {
     $nodeCommand = Get-Command "node" -ErrorAction SilentlyContinue
     if ($null -eq $nodeCommand) {
@@ -210,6 +268,8 @@ function Get-NodeMajorVersion {
 }
 
 function Get-PostgresMajorVersion {
+    Add-PostgresBinToProcessPath | Out-Null
+
     if (-not (Get-Command "psql" -ErrorAction SilentlyContinue)) {
         return $null
     }
@@ -253,6 +313,8 @@ function Install-SystemTools {
     $postgresMajor = Get-PostgresMajorVersion
     if ($null -eq $postgresMajor) {
         Invoke-WingetInstall "PostgreSQL.PostgreSQL.16" "PostgreSQL 16"
+        Update-ProcessPath
+        Add-PostgresBinToProcessPath | Out-Null
     }
     elseif ($postgresMajor -lt 15) {
         throw "PostgreSQL 15 or newer is required. Current psql major version is $postgresMajor. Upgrade PostgreSQL manually because major PostgreSQL upgrades can require data migration."
@@ -321,17 +383,45 @@ function Get-PostgresDataDirectory {
         return (Resolve-Path $PostgresDataDir).Path
     }
 
-    $service = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\$PostgresServiceName" -ErrorAction Stop
+    $resolvedServiceName = Resolve-PostgresServiceName
+    $service = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Services\$resolvedServiceName" -ErrorAction Stop
     $imagePath = $service.ImagePath
     $match = [regex]::Match($imagePath, "-D\s+`"(?<path>[^`"]+)`"")
     if (-not $match.Success) {
         $match = [regex]::Match($imagePath, "-D\s+(?<path>\S+)")
     }
     if (-not $match.Success) {
-        throw "Could not detect PostgreSQL data directory from service '$PostgresServiceName'. Pass -PostgresDataDir explicitly."
+        throw "Could not detect PostgreSQL data directory from service '$resolvedServiceName'. Pass -PostgresDataDir explicitly."
     }
 
     return (Resolve-Path $match.Groups["path"].Value).Path
+}
+
+function Resolve-PostgresServiceName {
+    $servicesRoot = "HKLM:\SYSTEM\CurrentControlSet\Services"
+
+    if ($PostgresServiceName) {
+        if (Test-Path (Join-Path $servicesRoot $PostgresServiceName)) {
+            return $PostgresServiceName
+        }
+
+        throw "PostgreSQL service '$PostgresServiceName' does not exist. Use the real service name, for example 'postgresql-x64-16', or omit -PostgresServiceName to auto-detect it."
+    }
+
+    $matches = @(Get-ChildItem -Path $servicesRoot -ErrorAction Stop |
+        Where-Object { $_.PSChildName -like "postgresql*" } |
+        Sort-Object {
+            $versionMatch = [regex]::Match($_.PSChildName, "\d+")
+            if ($versionMatch.Success) { [int]$versionMatch.Value } else { 0 }
+        } -Descending)
+
+    if ($matches.Count -eq 0) {
+        throw "Could not find a PostgreSQL Windows service. Make sure PostgreSQL is installed, then rerun '.\scripts\dev-local.ps1 install -UpgradeTools'."
+    }
+
+    $serviceName = $matches[0].PSChildName
+    Write-Host "Using PostgreSQL service '$serviceName'."
+    return $serviceName
 }
 
 function Set-LocalPostgresTrustAuth {
@@ -361,12 +451,13 @@ function Set-LocalPostgresTrustAuth {
 
 function Reset-PostgresPassword {
     Assert-Administrator
-    Assert-Command "psql" "Install PostgreSQL and add its bin folder to PATH, then reopen PowerShell."
+    Assert-PostgresClient
 
     if (-not $NewPostgresAdminPassword) {
         throw "Pass -NewPostgresAdminPassword with the new local PostgreSQL '$PostgresAdminUser' password."
     }
 
+    $resolvedServiceName = Resolve-PostgresServiceName
     $dataDir = Get-PostgresDataDirectory
     $pgHbaPath = Join-Path $dataDir "pg_hba.conf"
     if (-not (Test-Path $pgHbaPath)) {
@@ -385,7 +476,7 @@ function Reset-PostgresPassword {
 
     try {
         Set-LocalPostgresTrustAuth $pgHbaPath
-        Restart-Service -Name $PostgresServiceName -Force -ErrorAction Stop
+        Restart-Service -Name $resolvedServiceName -Force -ErrorAction Stop
 
         Write-Host "Resetting PostgreSQL password for '$PostgresAdminUser'..."
         Invoke-Checked { & psql -w -v ON_ERROR_STOP=1 -h localhost -U $PostgresAdminUser -d postgres -c "ALTER USER $postgresUserIdentifier WITH PASSWORD $passwordLiteral;" } "Could not reset PostgreSQL password."
@@ -396,7 +487,7 @@ function Reset-PostgresPassword {
     finally {
         Write-Host "Restoring original pg_hba.conf..."
         Copy-Item -LiteralPath $backupPath -Destination $pgHbaPath -Force
-        Restart-Service -Name $PostgresServiceName -Force -ErrorAction Stop
+        Restart-Service -Name $resolvedServiceName -Force -ErrorAction Stop
     }
 
     $previousPgPassword = $env:PGPASSWORD
@@ -417,7 +508,7 @@ function Initialize-Database {
         return
     }
 
-    Assert-Command "psql" "Install PostgreSQL 16 and add its bin folder to PATH, then reopen PowerShell."
+    Assert-PostgresClient
 
     $adminPassword = $PostgresAdminPassword
     if (-not $adminPassword) {

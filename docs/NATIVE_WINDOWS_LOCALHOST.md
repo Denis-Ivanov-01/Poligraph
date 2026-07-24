@@ -126,7 +126,9 @@ POSTGRES_ADMIN_PASSWORD=pgadmin
 
 The reset command backs up PostgreSQL authentication config, temporarily enables local trust auth, changes the password, restores the config, and restarts the PostgreSQL Windows service.
 
-The default service name is `postgresql-x64-15`. If your service has a different name:
+The script usually detects the PostgreSQL Windows service automatically.
+
+If it cannot detect the service, pass the service name explicitly. For PostgreSQL 16 this is usually:
 
 ```powershell
 .\scripts\dev-local.ps1 reset-postgres-password -PostgresServiceName "postgresql-x64-16" -NewPostgresAdminPassword "pgadmin"
@@ -287,6 +289,24 @@ Then run:
 ```powershell
 .\scripts\dev-local.ps1 install
 ```
+
+### psql Is Missing After PostgreSQL Installs
+
+PostgreSQL may install successfully without refreshing the current PowerShell `PATH`.
+
+First, close PowerShell, open a new PowerShell window, go back to the repository, and run:
+
+```powershell
+.\scripts\dev-local.ps1 install -UpgradeTools
+```
+
+The script also looks for `psql.exe` in the normal PostgreSQL install folders, such as:
+
+```text
+C:\Program Files\PostgreSQL\16\bin
+```
+
+If needed, add that folder to the Windows `PATH`, close PowerShell, and try again.
 
 ### Port 8000 Or 5173 Is Already In Use
 

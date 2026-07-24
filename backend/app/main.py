@@ -1,8 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import get_settings
+from app.routers.internal.utils import render
 from app.routers.internal import ai_workflow, appeals, audit_logs, auth, diagnostics, home, moderators, parties as internal_parties
 from app.routers.internal import politicians as internal_politicians
 from app.routers.internal import programs as internal_programs
@@ -46,6 +47,17 @@ def create_app() -> FastAPI:
     @app.get("/health")
     def health():
         return {"status": "ok"}
+
+    @app.exception_handler(Exception)
+    async def internal_exception_handler(request: Request, exc: Exception):
+        if request.url.path.startswith("/internal"):
+            return render(
+                request,
+                "internal/error.html",
+                {"error": f"{type(exc).__name__}: {exc}"},
+                status_code=500,
+            )
+        raise exc
 
     return app
 
