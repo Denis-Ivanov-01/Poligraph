@@ -29,6 +29,12 @@ Install or repair local development dependencies:
 .\scripts\dev-local.ps1 install
 ```
 
+If the computer is missing Node.js, Python, Git, or PostgreSQL, use:
+
+```powershell
+.\scripts\dev-local.ps1 install -UpgradeTools
+```
+
 Start the app:
 
 ```powershell
@@ -246,6 +252,22 @@ If you use nvm-windows and want a specific Node.js major version:
 
 Then close and reopen PowerShell if `node --version` still shows the old version.
 
+### Python Launcher Prints "Installed Pythons Found"
+
+If `install -UpgradeTools` prints something like this:
+
+```text
+py.exe : Installed Pythons found by C:\Windows\py.exe Launcher for Windows
+```
+
+Run the latest script version and try again:
+
+```powershell
+.\scripts\dev-local.ps1 install -UpgradeTools
+```
+
+The script treats that Python launcher output as "Python 3.12 is missing" and continues with the Python install path.
+
 ### PostgreSQL Password Fails
 
 Make sure `.env` has:
@@ -314,6 +336,23 @@ Then run again:
 
 ```powershell
 .\scripts\dev-local.ps1 run
+```
+
+### npm Says EPERM Or Cannot Unlink A File
+
+This usually means a local frontend process is still using a file inside `frontend\node_modules`.
+
+Run:
+
+```powershell
+.\scripts\dev-local.ps1 shutdown
+.\scripts\dev-local.ps1 install
+```
+
+If it still fails, close other PowerShell windows and editors that may be running the app, then run:
+
+```powershell
+.\scripts\dev-local.ps1 install
 ```
 
 ## What The Script Does Not Do

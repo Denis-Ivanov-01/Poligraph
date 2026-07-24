@@ -74,6 +74,24 @@ function Invoke-Checked {
     }
 }
 
+function Test-NativeCommand {
+    param([scriptblock]$Command)
+
+    $previousErrorActionPreference = $ErrorActionPreference
+    $global:LASTEXITCODE = 0
+    try {
+        $ErrorActionPreference = "Continue"
+        & $Command *> $null
+        return $LASTEXITCODE -eq 0
+    }
+    catch {
+        return $false
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+}
+
 function ConvertTo-SqlLiteral {
     param([string]$Value)
 
@@ -94,6 +112,29 @@ function Write-Utf8NoBom {
 
     $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
     [System.IO.File]::WriteAllText($Path, $Value, $utf8NoBom)
+}
+
+function Stop-OrphanedLocalDevProcesses {
+    $currentPid = $PID
+    $rootPattern = "*" + $RootDir.Path + "*"
+    $knownNames = @("node.exe", "python.exe", "uvicorn.exe")
+
+    try {
+        $processes = Get-CimInstance Win32_Process |
+            Where-Object {
+                $_.ProcessId -ne $currentPid -and
+                $knownNames -contains $_.Name -and
+                $_.CommandLine -like $rootPattern
+            }
+
+        foreach ($process in $processes) {
+            Write-Host "Stopping orphaned local dev process $($process.Name) on PID $($process.ProcessId)..."
+            Stop-Process -Id $process.ProcessId -ErrorAction SilentlyContinue
+        }
+    }
+    catch {
+        Write-Host "Could not scan for orphaned local dev processes. If npm reports locked files, close other PowerShell windows and editors that are running this app."
+    }
 }
 
 function Get-DatabaseUrl {
@@ -193,8 +234,7 @@ function Install-SystemTools {
         Invoke-WingetInstall "Python.Python.3.12" "Python 3.12"
     }
     elseif (Get-Command "py" -ErrorAction SilentlyContinue) {
-        & py -3.12 --version *> $null
-        if ($LASTEXITCODE -ne 0) {
+        if (-not (Test-NativeCommand { & py -3.12 --version })) {
             Invoke-WingetInstall "Python.Python.3.12" "Python 3.12"
         }
     }
@@ -225,7 +265,7 @@ function Install-SystemTools {
 }
 
 function Assert-NodeVersion {
-    Assert-Command "node" "Install Node.js 20 or newer, then reopen PowerShell."
+    Assert-Command "node" "Run '.\scripts\dev-local.ps1 install -UpgradeTools', or install Node.js 20 or newer manually and reopen PowerShell."
     $versionText = (& node --version).Trim()
     $major = Get-NodeMajorVersion
     if ($major -lt 20) {
@@ -439,6 +479,8 @@ function Install-LocalDev {
     Assert-NodeVersion
     Assert-Command "npm" "Install Node.js 22 or newer, then reopen PowerShell."
 
+    Stop-LocalDev
+
     if (-not (Test-Path $VenvDir)) {
         Write-Host "Creating Python virtual environment..."
         Invoke-ProjectPython @("-m", "venv", $VenvDir)
@@ -456,10 +498,14 @@ function Install-LocalDev {
     Push-Location $FrontendDir
     try {
         if (Test-Path (Join-Path $FrontendDir "package-lock.json")) {
-            Invoke-Checked { & npm ci } "Frontend dependency installation failed."
+            & npm ci
         }
         else {
-            Invoke-Checked { & npm install } "Frontend dependency installation failed."
+            & npm install
+        }
+
+        if ($LASTEXITCODE -ne 0) {
+            throw "Frontend dependency installation failed. On Windows this is often caused by locked files in frontend\node_modules. Run '.\scripts\dev-local.ps1 shutdown', close terminals/editors that may be running the app, then rerun '.\scripts\dev-local.ps1 install'."
         }
     }
     finally {
@@ -493,19 +539,21 @@ function Stop-LocalDev {
     $records = @(Read-StartedProcesses)
     if ($records.Count -eq 0) {
         Write-Host "No local dev process file found."
-        return
     }
+    else {
+        foreach ($record in $records) {
+            $process = Get-Process -Id $record.pid -ErrorAction SilentlyContinue
+            if ($null -eq $process) {
+                Write-Host "$($record.name) is already stopped."
+                continue
+            }
 
-    foreach ($record in $records) {
-        $process = Get-Process -Id $record.pid -ErrorAction SilentlyContinue
-        if ($null -eq $process) {
-            Write-Host "$($record.name) is already stopped."
-            continue
+            Write-Host "Stopping $($record.name) on PID $($record.pid)..."
+            Stop-Process -Id $record.pid
         }
-
-        Write-Host "Stopping $($record.name) on PID $($record.pid)..."
-        Stop-Process -Id $record.pid
     }
+
+    Stop-OrphanedLocalDevProcesses
 
     if (Test-Path $PidFile) {
         Remove-Item -LiteralPath $PidFile
