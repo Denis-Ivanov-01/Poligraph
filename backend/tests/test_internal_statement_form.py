@@ -1,16 +1,15 @@
-from datetime import date, datetime
+from datetime import date
 from types import SimpleNamespace
 from uuid import uuid4
 
 from app.routers.internal.statements import latest_party_id
 
 
-def membership(party_id, *, start_date=None, end_date=None, created_at=None):
+def membership(party_id, *, start_date=None, end_date=None):
     return SimpleNamespace(
         party_id=party_id,
         start_date=start_date,
         end_date=end_date,
-        created_at=created_at or datetime(2026, 1, 1),
     )
 
 
@@ -40,3 +39,7 @@ def test_latest_party_id_uses_latest_ended_membership_when_no_current_membership
     )
 
     assert latest_party_id(politician) == latest_party
+
+
+def test_latest_party_id_returns_none_when_politician_has_no_memberships():
+    assert latest_party_id(SimpleNamespace(memberships=[])) is None
