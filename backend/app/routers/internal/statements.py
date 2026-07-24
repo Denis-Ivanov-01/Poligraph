@@ -29,24 +29,29 @@ def statements_query():
 
 
 def statement_form_options(db: Session) -> dict:
-    politicians = db.scalars(
+    politician_models = db.scalars(
         select(Politician)
         .where(Politician.is_deleted.is_(False))
         .options(selectinload(Politician.memberships))
         .order_by(Politician.full_name)
     ).all()
+    politicians = [
+        {
+            "id": str(politician.id),
+            "full_name": politician.full_name,
+            "current_party_id": str(current_party_id(politician) or ""),
+        }
+        for politician in politician_models
+    ]
     return {
         "politicians": politicians,
         "parties": db.scalars(select(PoliticalParty).where(PoliticalParty.is_deleted.is_(False)).order_by(PoliticalParty.full_name)).all(),
     }
 
 
-def latest_party_id(politician: Politician) -> UUID | None:
-    memberships = sorted(
-        politician.memberships,
-        key=lambda item: (item.end_date is None, item.end_date or date.max, item.start_date or date.min),
-        reverse=True,
-    )
+def current_party_id(politician: Politician) -> UUID | None:
+    memberships = [membership for membership in politician.memberships if membership.end_date is None]
+    memberships.sort(key=lambda item: item.start_date or date.min, reverse=True)
     return memberships[0].party_id if memberships else None
 
 
@@ -77,7 +82,7 @@ def statements(request: Request, user: dict = Depends(current_internal_user), db
 @router.get("/new")
 def new_statement(request: Request, user: dict = Depends(current_internal_user), db: Session = Depends(get_db)):
     options = statement_form_options(db)
-    selected_party_id = latest_party_id(options["politicians"][0]) if options["politicians"] else None
+    selected_party_id = options["politicians"][0]["current_party_id"] if options["politicians"] else ""
     context = {
         "user": user,
         "statement": None,
@@ -85,7 +90,8 @@ def new_statement(request: Request, user: dict = Depends(current_internal_user),
         "form_note": "This is the initial draft step. The statement is not published from here.",
         "form_action": "/internal/statements",
         "submit_label": "Next",
-        "selected_party_id": selected_party_id,
+        "selected_party_id": str(selected_party_id or ""),
+        "selected_politician_id": options["politicians"][0]["id"] if options["politicians"] else "",
     }
     context.update(options)
     return render(request, "internal/statement_form.html", context)
@@ -141,7 +147,8 @@ def edit_statement_form(
         "form_note": "Update the draft or published statement fields.",
         "form_action": f"/internal/statements/{statement_id}/edit",
         "submit_label": "Save changes",
-        "selected_party_id": None,
+        "selected_party_id": "",
+        "selected_politician_id": str(statement.politician_id),
     }
     context.update(statement_form_options(db))
     return render(request, "internal/statement_form.html", context)

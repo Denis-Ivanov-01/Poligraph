@@ -3,9 +3,13 @@
 <h2>Politicians</h2>
 <p><a href="/internal/politicians/new">New politician</a></p>
 <table>
-  <tr><th>Name</th><th>Slug</th></tr>
+  <tr><th>Name</th><th>Slug</th><th>Actions</th></tr>
   {% for politician in politicians %}
-    <tr><td>{{ politician.full_name }}</td><td>{{ politician.slug }}</td></tr>
+    <tr>
+      <td>{{ politician.full_name }}</td>
+      <td>{{ politician.slug }}</td>
+      <td><a href="/internal/politicians/{{ politician.id }}/edit">Edit</a></td>
+    </tr>
   {% endfor %}
 </table>
 {% endblock %}

@@ -9,17 +9,21 @@
   <label>Source URL <input name="source_url" value="{{ statement.source_url if statement and statement.source_url else '' }}"></label>
   <label>Statement date <input name="statement_date" type="date" value="{{ statement.statement_date if statement and statement.statement_date else '' }}"></label>
   <label>Politician
-    <select name="politician_id" required>
+    <select name="politician_id" required {% if not statement %}data-party-sync-source{% endif %}>
       {% for politician in politicians %}
-        <option value="{{ politician.id }}" {% if statement and statement.politician_id == politician.id %}selected{% endif %}>{{ politician.full_name }}</option>
+        <option
+          value="{{ politician.id }}"
+          data-current-party-id="{{ politician.current_party_id }}"
+          {% if selected_politician_id == politician.id %}selected{% endif %}
+        >{{ politician.full_name }}</option>
       {% endfor %}
     </select>
   </label>
   <label>Party at statement time
-    <select name="party_at_statement_time_id">
+    <select name="party_at_statement_time_id" {% if not statement %}data-party-sync-target{% endif %}>
       <option value="">None</option>
       {% for party in parties %}
-        <option value="{{ party.id }}" {% if (statement and statement.party_at_statement_time_id == party.id) or (not statement and selected_party_id == party.id) %}selected{% endif %}>{{ party.full_name }}</option>
+        <option value="{{ party.id }}" {% if (statement and statement.party_at_statement_time_id == party.id) or (not statement and selected_party_id == party.id|string) %}selected{% endif %}>{{ party.full_name }}</option>
       {% endfor %}
     </select>
   </label>
@@ -34,4 +38,23 @@
   {% endif %}
   <button type="submit">{{ submit_label }}</button>
 </form>
+{% if not statement %}
+  <script>
+    (() => {
+      const politicianSelect = document.querySelector("[data-party-sync-source]");
+      const partySelect = document.querySelector("[data-party-sync-target]");
+      if (!politicianSelect || !partySelect) return;
+
+      const syncParty = () => {
+        const option = politicianSelect.options[politicianSelect.selectedIndex];
+        const partyId = option?.getAttribute("data-current-party-id") || "";
+        const matchingIndex = Array.from(partySelect.options).findIndex((partyOption) => partyOption.value === partyId);
+        partySelect.selectedIndex = matchingIndex >= 0 ? matchingIndex : 0;
+      };
+
+      politicianSelect.addEventListener("change", syncParty);
+      syncParty();
+    })();
+  </script>
+{% endif %}
 {% endblock %}
