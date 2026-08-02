@@ -2,12 +2,11 @@
 
 Political AI Filter is an open-source civic-tech project for transparent AI-assisted analysis of public political statements and political program commitments.
 
-For statements, the platform evaluates specific public claims and arguments, not politicians as people and not ideologies as "right" or "wrong". It looks at four dimensions:
+For statements, the platform evaluates specific public claims and arguments, not politicians as people and not ideologies as "right" or "wrong". It looks at three dimensions:
 
 - Factual accuracy
 - Logical consistency
 - Communicational integrity
-- Principle consistency
 
 For political programs, the platform extracts commitments, tracks their status, and makes the supporting evidence easier to inspect.
 
@@ -46,7 +45,6 @@ For statements:
 - **Factual accuracy** - are verifiable factual claims supported by reliable evidence?
 - **Logical consistency** - do the conclusions follow from the premises?
 - **Communicational integrity** - is the information presented in a way that does not materially mislead?
-- **Principle consistency** - is the position consistent with previous public positions on the same issue?
 
 For political programs:
 
@@ -57,7 +55,7 @@ For political programs:
 
 ## What the platform does not evaluate
 
-The project does not try to decide which ideology is correct, whether a political position is desirable, or whether a politician is a good person. It focuses on something narrower and more inspectable: how a specific public statement is constructed, supported, argued, communicated, and connected to previous positions, and how a specific program commitment is evidenced over time.
+The project does not try to decide which ideology is correct, whether a political position is desirable, or whether a politician is a good person. It focuses on something narrower and more inspectable: how a specific public statement is constructed, supported, argued, and communicated, and how a specific program commitment is evidenced over time.
 
 ## How each analysis is produced
 
@@ -114,7 +112,7 @@ The methodology documents cover statement evaluation criteria, program commitmen
 
 The project may expand from isolated statement analysis toward comparing political promises with later actions, votes, decisions, public records, and institutional outcomes.
 
-This would make it easier to track whether politicians and parties follow through on stated commitments. It is a natural extension of principle consistency, but broader: it compares speech with real-world action, not only speech with previous speech.
+This would make it easier to track whether politicians and parties follow through on stated commitments. It compares speech with real-world action and makes the supporting evidence easier to inspect.
 
 ### 2. Safer and more automated analysis
 

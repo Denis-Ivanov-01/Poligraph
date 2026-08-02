@@ -297,10 +297,6 @@ function HomeMethodologyPreview() {
     {
       label: scoreLabels.communicational_integrity,
       description: text.home.methodologyDimensions.communicationalIntegrity
-    },
-    {
-      label: scoreLabels.principle_consistency,
-      description: text.home.methodologyDimensions.principleConsistency
     }
   ];
 

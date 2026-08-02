@@ -2,7 +2,6 @@ export type AiScores = {
   factual_accuracy: number | null;
   logical_consistency: number | null;
   communicational_integrity: number | null;
-  principle_consistency: number | null;
   overall?: number | null;
 };
 
@@ -12,7 +11,6 @@ export type AiExplanations = {
   factual_accuracy: string;
   logical_consistency: string;
   communicational_integrity: string;
-  principle_consistency: string;
   overall?: string;
 };
 

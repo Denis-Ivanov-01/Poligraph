@@ -1,4 +1,4 @@
-import resources from "../resources.json";
+import resources from "../../../resources/bg-BG/resources.json";
 
 export const text = resources;
 

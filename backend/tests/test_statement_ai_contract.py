@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from app.services.ai_prompt_service import build_statement_prompt
+from app.services.statements_prompt_service import build_statement_prompt
 from app.services.ai_json_validation_service import validate_ai_json
 from app.services.commitment_service import EVIDENCE_SOURCE_TYPES
 from app.services.statement_analysis_service import normalize_ai_source_url
@@ -20,13 +20,11 @@ def valid_statement_payload():
                 "factual_accuracy": 80,
                 "logical_consistency": 75,
                 "communicational_integrity": 70,
-                "principle_consistency": 100,
             },
             "explanations": {
                 "factual_accuracy": "Supported by official data.",
                 "logical_consistency": "The conclusion follows the premise.",
                 "communicational_integrity": "The framing is clear.",
-                "principle_consistency": "No contradiction found.",
             },
             "evidence_review_completeness": "partial",
             "human_review_recommended": False,

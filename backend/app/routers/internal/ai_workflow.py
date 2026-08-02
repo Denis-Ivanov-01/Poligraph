@@ -12,7 +12,7 @@ from app.models.statement import Statement
 from app.routers.internal.utils import render
 from app.security import validate_csrf
 from app.services.ai_json_validation_service import validate_ai_json
-from app.services.ai_prompt_service import build_statement_prompt
+from app.services.statements_prompt_service import build_statement_prompt
 from app.services.audit_service import write_audit_log
 from app.services.statement_analysis_service import apply_statement_ai_analysis
 from app.services.statement_analysis_service import (
@@ -37,34 +37,12 @@ def get_statement(db: Session, statement_id: UUID) -> Statement:
     )
 
 
-def previous_statements_for_prompt(db: Session, statement: Statement) -> list[Statement]:
-    if not statement.politician_id or not statement.statement_date:
-        return []
-    return list(
-        db.scalars(
-            select(Statement)
-            .where(
-                Statement.id != statement.id,
-                Statement.politician_id == statement.politician_id,
-                Statement.statement_date < statement.statement_date,
-                Statement.is_deleted.is_(False),
-            )
-            .options(
-                selectinload(Statement.ai_analysis),
-                selectinload(Statement.politician),
-                selectinload(Statement.party_at_statement_time),
-            )
-            .order_by(Statement.statement_date.desc(), Statement.created_at.desc())
-        )
-    )
-
-
 @router.get("/{statement_id}/prompt")
 def prompt_page(statement_id: UUID, request: Request, user: dict = Depends(current_internal_user), db: Session = Depends(get_db)):
     statement = get_statement(db, statement_id)
     ai_run = latest_statement_ai_run(db, statement)
     if not ai_run:
-        prompt_text = build_statement_prompt(statement, previous_statements_for_prompt(db, statement))
+        prompt_text = build_statement_prompt(statement)
         ai_run = latest_or_create_statement_ai_run(db, statement, prompt_text, user)
         db.commit()
     prompt = ai_run.prompt_text
@@ -98,7 +76,7 @@ def generate_prompt(
 ):
     validate_csrf(request, csrf_token)
     statement = get_statement(db, statement_id)
-    prompt_text = build_statement_prompt(statement, previous_statements_for_prompt(db, statement))
+    prompt_text = build_statement_prompt(statement)
     latest_or_create_statement_ai_run(db, statement, prompt_text, user)
     db.commit()
     write_audit_log(db, request, user, "generate_ai_prompt", "statement", str(statement.id))
@@ -124,7 +102,7 @@ def save_ai_json(
 ):
     validate_csrf(request, csrf_token)
     statement = get_statement(db, statement_id)
-    prompt_text = build_statement_prompt(statement, previous_statements_for_prompt(db, statement))
+    prompt_text = build_statement_prompt(statement)
     ai_run = latest_or_create_statement_ai_run(db, statement, prompt_text, user)
     try:
         data = validate_ai_json(raw_json)

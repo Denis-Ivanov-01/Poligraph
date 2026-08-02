@@ -19,7 +19,6 @@ def calculated_overall_score(scores) -> int | None:
         scores.factual_accuracy,
         scores.logical_consistency,
         scores.communicational_integrity,
-        scores.principle_consistency,
     ]
     usable = [value for value in values if value is not None]
     return int(round(sum(usable) / len(usable))) if usable else None
@@ -137,11 +136,9 @@ def apply_statement_ai_analysis(
     analysis.factual_accuracy_score = data.scores.factual_accuracy
     analysis.logical_consistency_score = data.scores.logical_consistency
     analysis.communicational_integrity_score = data.scores.communicational_integrity
-    analysis.principle_consistency_score = data.scores.principle_consistency
     analysis.factual_accuracy_explanation = explanations.factual_accuracy
     analysis.logical_consistency_explanation = explanations.logical_consistency
     analysis.communicational_integrity_explanation = explanations.communicational_integrity
-    analysis.principle_consistency_explanation = explanations.principle_consistency
     analysis.evidence_review_completeness = statement_analysis.get("evidence_review_completeness", "partial")
     analysis.human_review_recommended = bool(statement_analysis.get("human_review_recommended", False))
     analysis.human_review_reason = statement_analysis.get("human_review_reason")

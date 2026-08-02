@@ -6,7 +6,6 @@ export const scoreLabels: Record<keyof AiScores, string> = {
   factual_accuracy: text.scores.factualAccuracy,
   logical_consistency: text.scores.logicalConsistency,
   communicational_integrity: text.scores.communicationalIntegrity,
-  principle_consistency: text.scores.principleConsistency,
   overall: text.scores.overall
 };
 

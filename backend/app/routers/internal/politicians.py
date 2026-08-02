@@ -26,6 +26,18 @@ def politician_query():
     return select(Politician).where(Politician.is_deleted.is_(False)).options(selectinload(Politician.memberships)).order_by(Politician.full_name)
 
 
+def politician_lookup_filter(politician_key: str):
+    try:
+        politician_id = UUID(politician_key)
+    except ValueError:
+        return Politician.slug == politician_key
+    return Politician.id == politician_id
+
+
+def get_politician(db: Session, politician_key: str) -> Politician | None:
+    return db.scalar(politician_query().where(politician_lookup_filter(politician_key)))
+
+
 def current_membership(politician: Politician) -> PartyMembership | None:
     memberships = [membership for membership in politician.memberships if membership.end_date is None]
     memberships.sort(key=lambda item: item.start_date or date.min, reverse=True)
@@ -93,12 +105,12 @@ def create_politician(
 
 @router.get("/{politician_id}/edit")
 def edit_politician_form(
-    politician_id: UUID,
+    politician_id: str,
     request: Request,
     user: dict = Depends(current_internal_user),
     db: Session = Depends(get_db),
 ):
-    politician = db.scalar(politician_query().where(Politician.id == politician_id))
+    politician = get_politician(db, politician_id)
     if not politician:
         raise HTTPException(status_code=404, detail="Politician not found")
     membership = current_membership(politician)
@@ -119,7 +131,7 @@ def edit_politician_form(
 
 @router.post("/{politician_id}/edit")
 def update_politician(
-    politician_id: UUID,
+    politician_id: str,
     request: Request,
     slug: str = Form(...),
     full_name: str = Form(...),
@@ -131,7 +143,7 @@ def update_politician(
     db: Session = Depends(get_db),
 ):
     validate_csrf(request, csrf_token)
-    politician = db.scalar(politician_query().where(Politician.id == politician_id))
+    politician = get_politician(db, politician_id)
     if not politician:
         raise HTTPException(status_code=404, detail="Politician not found")
 

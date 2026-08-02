@@ -4,12 +4,49 @@ from pathlib import Path
 from typing import Any
 
 
-RESOURCE_PATH = Path(__file__).with_name("resources.json")
+DEFAULT_LOCALE = "bg-BG"
+RESOURCE_ROOT_CANDIDATES = (
+    Path.cwd() / "resources",
+    Path.cwd().parent / "resources",
+    Path(__file__).resolve().parents[2] / "resources",
+    Path("/resources"),
+)
+BACKEND_RESOURCE_NAME = "backend.json"
+PUBLIC_RESOURCE_NAME = "resources.json"
+METHODOLOGY_PAGES = {
+    "statements": "statements-methodology.md",
+}
+
+
+def resource_root() -> Path:
+    for path in RESOURCE_ROOT_CANDIDATES:
+        if path.exists():
+            return path
+    return RESOURCE_ROOT_CANDIDATES[0]
+
+
+def _locale_dir(locale: str = DEFAULT_LOCALE) -> Path:
+    if locale != DEFAULT_LOCALE:
+        raise FileNotFoundError(locale)
+    return resource_root() / locale
 
 
 @lru_cache
-def resources() -> dict[str, Any]:
-    return json.loads(RESOURCE_PATH.read_text(encoding="utf-8"))
+def resources(locale: str = DEFAULT_LOCALE) -> dict[str, Any]:
+    return json.loads((_locale_dir(locale) / BACKEND_RESOURCE_NAME).read_text(encoding="utf-8"))
+
+
+@lru_cache
+def public_resources(locale: str = DEFAULT_LOCALE) -> dict[str, Any]:
+    return json.loads((_locale_dir(locale) / PUBLIC_RESOURCE_NAME).read_text(encoding="utf-8"))
+
+
+@lru_cache
+def methodology_text(page: str, locale: str = DEFAULT_LOCALE) -> str:
+    filename = METHODOLOGY_PAGES.get(page)
+    if not filename:
+        raise FileNotFoundError(page)
+    return (_locale_dir(locale) / filename).read_text(encoding="utf-8")
 
 
 def resource_text(path: str, default: str = "") -> str:

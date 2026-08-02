@@ -2,13 +2,15 @@ import { Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import methodologyContent from "../content/methodology.bg.md?raw";
+import { getMethodology } from "../api/resources";
+import { ErrorState } from "../components/common/ErrorState";
+import { LoadingState } from "../components/common/LoadingState";
 import { text } from "../i18n/resources";
 import { MetricIcon } from "../components/common/MetricIcon";
 import { scoreLabels } from "../components/statements/ScorePanel";
+import { useAsync } from "../utils/useAsync";
 
 const bibliographyHeading = "## Избрана библиография";
-const [mainMethodologyContent, bibliographyContent] = methodologyContent.split(bibliographyHeading);
 
 const criteria = [
   {
@@ -22,10 +24,6 @@ const criteria = [
   {
     label: scoreLabels.communicational_integrity,
     description: text.methodology.criteria.communicationalIntegrity
-  },
-  {
-    label: scoreLabels.principle_consistency,
-    description: text.methodology.criteria.principleConsistency
   }
 ];
 
@@ -70,7 +68,9 @@ function MethodologyCriteriaCards() {
   );
 }
 
-function MethodologyContent() {
+function MethodologyContent({ content }: { content: string }) {
+  const [mainMethodologyContent, bibliographyContent] = content.split(bibliographyHeading);
+
   return (
     <>
       <div className="methodology-document">
@@ -91,6 +91,8 @@ function MethodologyContent() {
 }
 
 export function MethodologyPage() {
+  const { data: methodologyContent, loading, error } = useAsync(() => getMethodology("statements"), []);
+
   return (
     <article className="methodology-page">
       <div className="detail-hero methodology-hero">
@@ -102,7 +104,9 @@ export function MethodologyPage() {
       </div>
       <MethodologyIntro />
       <MethodologyCriteriaCards />
-      <MethodologyContent />
+      {loading ? <LoadingState /> : null}
+      {error ? <ErrorState message={error} /> : null}
+      {methodologyContent ? <MethodologyContent content={methodologyContent} /> : null}
     </article>
   );
 }

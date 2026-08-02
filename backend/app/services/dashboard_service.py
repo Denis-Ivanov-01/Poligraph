@@ -13,8 +13,7 @@ def dashboard_data(db: Session) -> dict:
         func.coalesce(AiAnalysis.factual_accuracy_score, 0)
         + func.coalesce(AiAnalysis.logical_consistency_score, 0)
         + func.coalesce(AiAnalysis.communicational_integrity_score, 0)
-        + func.coalesce(AiAnalysis.principle_consistency_score, 0)
-    ) / 4.0
+    ) / 3.0
     published = (
         select(Statement)
         .where(Statement.status == "published", Statement.is_deleted.is_(False), Statement.is_archived.is_(False))

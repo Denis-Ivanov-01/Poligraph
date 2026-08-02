@@ -78,11 +78,9 @@ class StatementAiAnalysis(Base):
     factual_accuracy_score: Mapped[int | None] = mapped_column(Integer)
     logical_consistency_score: Mapped[int | None] = mapped_column(Integer)
     communicational_integrity_score: Mapped[int | None] = mapped_column(Integer)
-    principle_consistency_score: Mapped[int | None] = mapped_column(Integer)
     factual_accuracy_explanation: Mapped[str | None] = mapped_column(Text)
     logical_consistency_explanation: Mapped[str | None] = mapped_column(Text)
     communicational_integrity_explanation: Mapped[str | None] = mapped_column(Text)
-    principle_consistency_explanation: Mapped[str | None] = mapped_column(Text)
     evidence_review_completeness: Mapped[str] = mapped_column(String(80), default="partial")
     human_review_recommended: Mapped[bool] = mapped_column(default=False)
     human_review_reason: Mapped[str | None] = mapped_column(Text)
@@ -142,14 +140,13 @@ class StatementAiAnalysis(Base):
             self.factual_accuracy_score,
             self.logical_consistency_score,
             self.communicational_integrity_score,
-            self.principle_consistency_score,
         ]
         values = [score for score in scores if score is not None]
         return round(sum(values) / len(values)) if values else None
 
     @property
     def overall_explanation(self) -> str:
-        return "Computed from the four dimension scores; not stored in the database."
+        return "Computed from the three dimension scores; not stored in the database."
 
 
 AiAnalysis = StatementAiAnalysis

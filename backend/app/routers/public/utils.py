@@ -6,7 +6,6 @@ SCORE_KEYS = (
     "factual_accuracy",
     "logical_consistency",
     "communicational_integrity",
-    "principle_consistency",
 )
 
 
@@ -25,7 +24,6 @@ def average_scores_payload(statements: list[Statement]) -> dict[str, float] | No
             sum((analysis.communicational_integrity_score or 0) for analysis in analyses) / len(analyses),
             2,
         ),
-        "principle_consistency": round(sum((analysis.principle_consistency_score or 0) for analysis in analyses) / len(analyses), 2),
         "overall": round(sum((analysis.overall_score or 0) for analysis in analyses) / len(analyses), 2),
     }
 
@@ -82,14 +80,12 @@ def analysis_payload(analysis: AiAnalysis | None) -> dict | None:
             "factual_accuracy": analysis.factual_accuracy_score,
             "logical_consistency": analysis.logical_consistency_score,
             "communicational_integrity": analysis.communicational_integrity_score,
-            "principle_consistency": analysis.principle_consistency_score,
             "overall": analysis.overall_score,
         },
         "explanations": {
             "factual_accuracy": analysis.factual_accuracy_explanation,
             "logical_consistency": analysis.logical_consistency_explanation,
             "communicational_integrity": analysis.communicational_integrity_explanation,
-            "principle_consistency": analysis.principle_consistency_explanation,
             "overall": analysis.overall_explanation,
         },
         "source_urls": analysis.source_urls or [],

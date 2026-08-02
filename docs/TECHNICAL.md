@@ -31,9 +31,9 @@ The current implementation includes:
 
 - `backend/` - FastAPI backend with SQLAlchemy models, Alembic migrations, PostgreSQL, Redis, internal Jinja2 templates, and public API routers.
 - `frontend/` - React, TypeScript, Vite, and React Router public frontend.
-- `frontend/src/content/` - editable Markdown content, including the public methodology document.
-- `frontend/src/resources.json` - public frontend strings used through `frontend/src/i18n/resources.ts`.
-- `backend/app/resources.json` - backend resource values used by backend services, including AI prompt language configuration.
+- `resources/<locale>/` - locale-scoped public resources, including UI strings and public methodology Markdown.
+- `resources/bg-BG/resources.json` - Bulgarian public frontend strings used through `frontend/src/i18n/resources.ts` and served by the backend resources API.
+- `resources/bg-BG/backend.json` - Bulgarian backend resource values used by backend services, including AI prompt language configuration.
 - `docker-compose.yml` - local development stack for PostgreSQL, Redis, backend, frontend, Umami, and Umami PostgreSQL.
 
 The public frontend consumes read-only API endpoints under `/api/*`. Internal moderation workflows are served by the backend under `/internal`. The diagnostics panel is protected separately at `/diagnostics_panel` by default.
@@ -78,8 +78,8 @@ The public frontend is a Vite React app. Routing is defined in `frontend/src/app
 
 Key frontend conventions:
 
-- Page-level copy should come from `frontend/src/resources.json` unless it is database content or long-form Markdown content.
-- Long-form methodology content lives in `frontend/src/content/methodology.bg.md`.
+- Page-level copy should come from `resources/<locale>/resources.json` unless it is database content.
+- Long-form public methodology content lives in `resources/<locale>/`.
 - The methodology page renders Markdown through `react-markdown` and `remark-gfm`.
 - Shared UI elements live under `frontend/src/components/`.
 - Public API clients live under `frontend/src/api/`.
@@ -106,7 +106,7 @@ The intended statement analysis workflow is:
 2. The system stores the original text and statement metadata.
 3. The statement is analyzed using a versioned instruction/prompt.
 4. The prompt template is assembled from `backend/app/services/ai_prompt_template.py`.
-5. Backend resource values, such as the target language, are read from `backend/app/resources.json`.
+5. Backend resource values, such as the target language, are read from `resources/<locale>/backend.json`.
 6. The AI model returns structured output.
 7. The raw model response is stored.
 8. A moderator reviews the result for obvious technical, factual, or structural issues.
@@ -120,15 +120,15 @@ Political program analysis uses a separate workflow for program structure and co
 
 The project uses file-backed content/resources so that copy can be edited without rewriting business logic.
 
-- Public UI strings: `frontend/src/resources.json`
+- Public UI strings: `resources/bg-BG/resources.json`
 - Public resource accessor: `frontend/src/i18n/resources.ts`
-- Backend resources: `backend/app/resources.json`
+- Backend resources: `resources/bg-BG/backend.json`
 - Backend resource accessor: `backend/app/resources.py`
-- Methodology long-form content: `frontend/src/content/methodology.bg.md`
+- Methodology long-form content: `resources/bg-BG/statements-methodology.md`
 - Statement methodology notes: `docs/STATEMENTS_METHODOLOGY.md`
 - Political program methodology notes: `docs/PPROGRAMS_METHODOLOGY.md`
 
-Short UI strings should generally go into `resources.json`. Long public editorial content should remain in Markdown or another dedicated content file.
+Short UI strings should generally go into `resources/<locale>/resources.json`. Long public editorial content should remain in Markdown or another dedicated content file in the same locale directory.
 
 ## Umami Analytics and Diagnostics
 
@@ -365,4 +365,4 @@ DIAGNOSTICS_DASHBOARD_URL=https://your-umami-domain.example.com/share/your-share
 - [Root README](../README.md)
 - [Statements methodology](./STATEMENTS_METHODOLOGY.md)
 - [Political programs methodology](./PPROGRAMS_METHODOLOGY.md)
-- [Public methodology content](../frontend/src/content/methodology.bg.md)
+- [Public methodology content](../resources/bg-BG/statements-methodology.md)

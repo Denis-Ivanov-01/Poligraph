@@ -33,7 +33,6 @@ STATEMENT_DIMENSIONS = {
     "factual_accuracy",
     "logical_consistency",
     "communicational_integrity",
-    "principle_consistency",
 }
 AI_EVIDENCE_SOURCE_TYPES = EVIDENCE_SOURCE_TYPES
 
@@ -57,7 +56,6 @@ class AiScores(BaseModel):
     factual_accuracy: int | None = Field(default=None, ge=0, le=100)
     logical_consistency: int | None = Field(default=None, ge=0, le=100)
     communicational_integrity: int | None = Field(default=None, ge=0, le=100)
-    principle_consistency: int | None = Field(default=None, ge=0, le=100)
     overall: int | None = Field(default=None, ge=0, le=100)
 
 
@@ -65,7 +63,6 @@ class AiExplanations(BaseModel):
     factual_accuracy: str
     logical_consistency: str
     communicational_integrity: str
-    principle_consistency: str
     overall: str
 
 
@@ -73,14 +70,12 @@ class AiAnalysisInputScores(BaseModel):
     factual_accuracy: int = Field(ge=0, le=100)
     logical_consistency: int = Field(ge=0, le=100)
     communicational_integrity: int = Field(ge=0, le=100)
-    principle_consistency: int = Field(ge=0, le=100)
 
 
 class AiAnalysisInputExplanations(BaseModel):
     factual_accuracy: str
     logical_consistency: str
     communicational_integrity: str
-    principle_consistency: str
 
 
 class AiSourceUrl(BaseModel):

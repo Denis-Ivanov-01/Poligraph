@@ -19,9 +19,6 @@ from app.services.prompt_schema_builder import db_fields_contract, enum_list_con
 
 PROMPT_VERSION = "mvp-3"
 SCHEMA_VERSION = "mvp-3"
-MAX_PREVIOUS_STATEMENTS = 8
-MAX_PREVIOUS_BLOCK_CHARS = 8000
-MAX_SINGLE_PREVIOUS_STATEMENT_CHARS = 1200
 
 
 def build_ai_response_json_schema() -> str:
@@ -98,13 +95,11 @@ def build_ai_response_json_schema() -> str:
                     "factual_accuracy": 80,
                     "logical_consistency": 75,
                     "communicational_integrity": 70,
-                    "principle_consistency": 100,
                 },
                 "explanations": {
                     "factual_accuracy": "string",
                     "logical_consistency": "string",
                     "communicational_integrity": "string",
-                    "principle_consistency": "string",
                 },
                 "evidence_review_completeness": statement_fields["evidence_review_completeness"],
                 "human_review_recommended": statement_fields["human_review_recommended"],
@@ -193,19 +188,9 @@ Definition: Degree to which the statement communicates clearly, proportionately,
 - Scores below 40 require serious, repeated, or central misleading framing.
 - Assign 0 only if the statement is dominated by fabricated certainty, severe factual confusion, dehumanizing/ad hominem content, or rhetoric that makes reasonable fact/opinion distinction nearly impossible.
 
-4. principle_consistency
-Definition: Degree to which the statement is consistent with the politician's previously documented public positions on the same issue.
-- First evaluate the previous statements provided below.
-- If they are insufficient, search reliable public sources for earlier relevant statements by the same politician before the current statement date.
-- Compare only substantially similar policy issues, topics, or principles.
-- Do not compare unrelated subjects merely because they involve the same politician.
-- Reasoned or evidence-based changes of position should be penalized less than unexplained contradictions.
-- Return 50 only if, after searching, evidence remains insufficient.
-- If no relevant previous public statements exist after searching, return exactly 100.
-
 OUTPUT RULES
 - Do not return an overall score or overall explanation.
-- Put the four dimension scores inside statement_analysis.scores.
+- Put the three dimension scores inside statement_analysis.scores.
 - Each explanation must briefly justify the assigned score, mention main supporting and limiting factors, remain neutral, and not repeat the numeric score.
 - Include sources that materially support the verification or evaluation, with source_ref values used by claims.source_refs.
 - For factual_accuracy, set factual_accuracy_applicability to "not_applicable" only when the statement contains no factual claims.
@@ -230,9 +215,4 @@ Party at statement time: {party_at_statement_time}
 
 Original text:
 {original_text}
-
-Previous statements for principle consistency comparison:
-The following previous statements are only a limited recency-based sample provided for convenience. They are NOT necessarily sufficient for evaluating principle consistency.
-If they are insufficient or do not address substantially the same issue, search reliable public sources for earlier relevant statements made before the current statement date before assigning a score.
-{previous_statements}
 """

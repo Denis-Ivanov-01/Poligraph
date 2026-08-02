@@ -38,7 +38,7 @@ export function AiDetailsPanel({ analysis }: { analysis: AiAnalysis }) {
       <div className="explanation-panel" aria-live="polite" key={activeExplanation}>
         <p className="eyebrow">{text.analysis.explanations}</p>
         <h3>{scoreLabels[activeExplanation]}</h3>
-        <p>{activeExplanation === "overall" ? "Computed in the interface as the average of the four dimension scores." : analysis.explanations[activeExplanation]}</p>
+        <p>{activeExplanation === "overall" ? "Computed in the interface as the average of the three dimension scores." : analysis.explanations[activeExplanation]}</p>
       </div>
       {analysis.disclaimer ? <p className="analysis-disclaimer">{analysis.disclaimer}</p> : null}
       {analysis.claims?.length ? (
@@ -85,7 +85,6 @@ function withComputedOverall(scores: AiScores): AiScores {
     scores.factual_accuracy,
     scores.logical_consistency,
     scores.communicational_integrity,
-    scores.principle_consistency
   ].filter((value): value is number => typeof value === "number");
 
   return {

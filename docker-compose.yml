@@ -77,6 +77,7 @@ services:
       - ./backend/app:/app/app
       - ./backend/alembic:/app/alembic
       - ./backend/alembic.ini:/app/alembic.ini
+      - ./resources:/app/resources
       - media_data:/app/media
 
   frontend:
@@ -97,6 +98,7 @@ services:
       - ./frontend/index.html:/app/index.html
       - ./frontend/vite.config.ts:/app/vite.config.ts
       - ./frontend/tsconfig.json:/app/tsconfig.json
+      - ./resources:/resources
 
 volumes:
   postgres_data:
