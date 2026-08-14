@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
+import logoUrl from "../../../../resources/logo_cyrillic.png";
 import { text } from "../../i18n/resources";
 
 const methodologyLinks = [
@@ -17,8 +18,7 @@ export function Header() {
     <header className="site-header">
       <div className="site-header-inner">
         <NavLink to="/" className="brand" aria-label={text.app.brand}>
-          <span className="brand-mark" aria-hidden="true" />
-          <span>{text.app.brand}</span>
+          <img className="brand-logo" src={logoUrl} alt="" aria-hidden="true" />
         </NavLink>
         <nav className="site-nav" aria-label={text.nav.aria}>
           <NavLink to="/parties">{text.nav.parties}</NavLink>
