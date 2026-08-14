@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 
 import { LoadingState } from "../components/common/LoadingState";
 import { PublicLayout } from "../components/layout/PublicLayout";
@@ -17,8 +17,16 @@ import { SearchPage } from "../pages/SearchPage";
 import { StatementDetailsPage } from "../pages/StatementDetailsPage";
 import { StatementsPage } from "../pages/StatementsPage";
 
-const MethodologyPage = lazy(() =>
-  import("../pages/MethodologyPage").then((module) => ({ default: module.MethodologyPage }))
+const StatementsMethodologyPage = lazy(() =>
+  import("../pages/StatementsMethodologyPage").then((module) => ({ default: module.StatementsMethodologyPage }))
+);
+const ProgramsMethodologyPage = lazy(() =>
+  import("../pages/ProgramsMethodologyPage").then((module) => ({ default: module.ProgramsMethodologyPage }))
+);
+const ControversialTopicsMethodologyPage = lazy(() =>
+  import("../pages/ControversialTopicsMethodologyPage").then((module) => ({
+    default: module.ControversialTopicsMethodologyPage
+  }))
 );
 
 export const router = createBrowserRouter([
@@ -40,9 +48,29 @@ export const router = createBrowserRouter([
       { path: "dashboard", element: <DashboardPage /> },
       {
         path: "methodology",
+        element: <Navigate to="/methodology/statements" replace />
+      },
+      {
+        path: "methodology/statements",
         element: (
           <Suspense fallback={<LoadingState />}>
-            <MethodologyPage />
+            <StatementsMethodologyPage />
+          </Suspense>
+        )
+      },
+      {
+        path: "methodology/programs",
+        element: (
+          <Suspense fallback={<LoadingState />}>
+            <ProgramsMethodologyPage />
+          </Suspense>
+        )
+      },
+      {
+        path: "methodology/controversial-topics",
+        element: (
+          <Suspense fallback={<LoadingState />}>
+            <ControversialTopicsMethodologyPage />
           </Suspense>
         )
       },

@@ -11,7 +11,10 @@
     "statements": "Изказвания",
     "programs": "Програми",
     "dashboard": "Табло",
-    "methodology": "За метода",
+    "methodology": "Методология",
+    "methodologyStatements": "Анализ на изказвания",
+    "methodologyPrograms": "Анализ на политически програми",
+    "methodologyControversialTopics": "Анализ на обществено значими теми",
     "search": "Търсене"
   },
   "common": {
@@ -137,6 +140,9 @@
   "methodology": {
     "eyebrow": "Методология",
     "title": "За метода",
+    "statementsTitle": "Анализ на изказвания",
+    "programsTitle": "Анализ на политически програми",
+    "controversialTopicsTitle": "Анализ на обществено значими теми",
     "backToHome": "Към началната страница",
     "introEyebrow": "Основна идея",
     "introTitle": "Не оценяваме политиците. Оценяваме как говорят.",

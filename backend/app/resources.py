@@ -15,6 +15,8 @@ BACKEND_RESOURCE_NAME = "backend.json"
 PUBLIC_RESOURCE_NAME = "resources.json"
 METHODOLOGY_PAGES = {
     "statements": "statements-methodology.md",
+    "programs": "programs-methodology.md",
+    "controversial-topics": "controversial-topics-methodology.md",
 }
 
 

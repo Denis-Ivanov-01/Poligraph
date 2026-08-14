@@ -68,7 +68,7 @@ function MethodologyCriteriaCards() {
   );
 }
 
-function MethodologyContent({ content }: { content: string }) {
+export function MethodologyContent({ content }: { content: string }) {
   const [mainMethodologyContent, bibliographyContent] = content.split(bibliographyHeading);
 
   return (
@@ -90,14 +90,14 @@ function MethodologyContent({ content }: { content: string }) {
   );
 }
 
-export function MethodologyPage() {
+export function StatementsMethodologyPage() {
   const { data: methodologyContent, loading, error } = useAsync(() => getMethodology("statements"), []);
 
   return (
     <article className="methodology-page">
       <div className="detail-hero methodology-hero">
         <p className="eyebrow">{text.methodology.eyebrow}</p>
-        <h1>{text.methodology.title}</h1>
+        <h1>{text.methodology.statementsTitle}</h1>
         <Link className="button-secondary" to="/">
           {text.methodology.backToHome}
         </Link>
