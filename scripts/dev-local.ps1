@@ -15,7 +15,8 @@ param(
     [string]$PostgresDataDir = "",
     [string]$NewPostgresAdminPassword = "",
     [switch]$SkipDatabaseSetup,
-    [switch]$UpgradeTools
+    [switch]$UpgradeTools,
+    [switch]$BackendReload
 )
 
 Set-StrictMode -Version Latest
@@ -725,6 +726,34 @@ function Rebuild-Backend {
     Write-Host "Backend rebuild complete. Run '.\scripts\dev-local.ps1 run' to start the app."
 }
 
+function Test-BackendResourceEndpoint {
+    $url = "http://127.0.0.1:$BackendPort/api/resources/bg-BG/methodology/statements"
+
+    for ($attempt = 1; $attempt -le 20; $attempt++) {
+        try {
+            $response = Invoke-WebRequest -Uri $url -Headers @{ Accept = "text/markdown, text/plain" } -UseBasicParsing -TimeoutSec 2
+            if ($response.StatusCode -eq 200) {
+                Write-Host "Backend resource endpoint check passed."
+                return
+            }
+        }
+        catch {
+            $statusCode = $null
+            if ($_.Exception.Response) {
+                $statusCode = [int]$_.Exception.Response.StatusCode
+            }
+
+            if ($statusCode) {
+                throw "Backend resource endpoint check failed with HTTP $statusCode at $url."
+            }
+        }
+
+        Start-Sleep -Milliseconds 500
+    }
+
+    throw "Backend resource endpoint check failed because $url did not respond in time."
+}
+
 function Diagnose-Backend {
     $VenvPython = Join-Path $VenvDir "Scripts\python.exe"
     if (-not (Test-Path $VenvPython)) {
@@ -892,9 +921,14 @@ function Start-LocalDev {
     }
 
     Write-Host "Starting backend..."
+    $backendArguments = @("app.main:app", "--host", "127.0.0.1", "--port", "$BackendPort")
+    if ($BackendReload) {
+        $backendArguments = @("app.main:app", "--reload", "--host", "127.0.0.1", "--port", "$BackendPort")
+    }
+
     $backendProcess = Start-Process `
         -FilePath $UvicornExe `
-        -ArgumentList @("app.main:app", "--reload", "--host", "127.0.0.1", "--port", "$BackendPort") `
+        -ArgumentList $backendArguments `
         -WorkingDirectory $BackendDir `
         -PassThru `
         -WindowStyle Hidden `
@@ -926,6 +960,7 @@ function Start-LocalDev {
     Write-Host "Public frontend: http://localhost:$FrontendPort"
     Write-Host "Internal app: http://localhost:$BackendPort/internal"
     Write-Host "Logs: $StateDir"
+    Test-BackendResourceEndpoint
     Write-Host "Run '.\scripts\dev-local.ps1 shutdown' to stop the app processes."
 }
 
