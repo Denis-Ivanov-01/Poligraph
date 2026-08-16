@@ -1,6 +1,6 @@
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("install", "run", "shutdown", "rebuild_ui", "reset-postgres-password")]
+    [ValidateSet("install", "run", "shutdown", "rebuild_ui", "rebuild_backend", "reset-postgres-password")]
     [string]$Action = "run",
 
     [string]$PostgresAdminUser = "postgres",
@@ -685,6 +685,46 @@ function Rebuild-Ui {
     Write-Host "Frontend UI rebuild complete."
 }
 
+function Rebuild-Backend {
+    if ($UpgradeTools) {
+        Install-SystemTools
+    }
+
+    Stop-LocalDev
+
+    if (-not (Test-Path $VenvDir)) {
+        Write-Host "Creating Python virtual environment..."
+        Invoke-ProjectPython @("-m", "venv", $VenvDir)
+    }
+
+    $VenvPython = Join-Path $VenvDir "Scripts\python.exe"
+    $AlembicExe = Join-Path $VenvDir "Scripts\alembic.exe"
+    if (-not (Test-Path $VenvPython)) {
+        throw "The virtual environment was not created correctly at $VenvDir."
+    }
+
+    Write-Host "Reinstalling backend dependencies..."
+    Invoke-Checked { & $VenvPython -m pip install -e $BackendDir } "Backend dependency installation failed."
+
+    Set-AppEnvironment
+    Initialize-Database
+
+    if (-not (Test-Path $AlembicExe)) {
+        throw "Alembic was not installed correctly at $AlembicExe."
+    }
+
+    Write-Host "Running Alembic migrations..."
+    Push-Location $BackendDir
+    try {
+        Invoke-Checked { & $AlembicExe upgrade head } "Alembic migrations failed."
+    }
+    finally {
+        Pop-Location
+    }
+
+    Write-Host "Backend rebuild complete. Run '.\scripts\dev-local.ps1 run' to start the app."
+}
+
 function Start-LocalDev {
     if ($UpgradeTools) {
         Install-SystemTools
@@ -761,5 +801,6 @@ switch ($Action) {
     "run" { Start-LocalDev }
     "shutdown" { Stop-LocalDev }
     "rebuild_ui" { Rebuild-Ui }
+    "rebuild_backend" { Rebuild-Backend }
     "reset-postgres-password" { Reset-PostgresPassword }
 }
