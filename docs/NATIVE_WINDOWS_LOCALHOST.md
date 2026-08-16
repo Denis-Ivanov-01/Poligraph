@@ -202,6 +202,12 @@ After dependency changes:
 .\scripts\dev-local.ps1 run
 ```
 
+After UI changes:
+
+```powershell
+.\scripts\dev-local.ps1 rebuild_ui
+```
+
 ## How To Know It Worked
 
 Backend health should show:

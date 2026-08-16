@@ -1,6 +1,6 @@
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("install", "run", "shutdown", "reset-postgres-password")]
+    [ValidateSet("install", "run", "shutdown", "rebuild_ui", "reset-postgres-password")]
     [string]$Action = "run",
 
     [string]$PostgresAdminUser = "postgres",
@@ -651,6 +651,40 @@ function Stop-LocalDev {
     }
 }
 
+function Rebuild-Ui {
+    if ($UpgradeTools) {
+        Install-SystemTools
+    }
+
+    Assert-NodeVersion
+    Assert-Command "npm" "Install Node.js 22 or newer, then reopen PowerShell."
+
+    Write-Host "Rebuilding frontend UI..."
+    Push-Location $FrontendDir
+    try {
+        if (-not (Test-Path (Join-Path $FrontendDir "node_modules"))) {
+            Write-Host "Frontend dependencies are missing. Installing them first..."
+            if (Test-Path (Join-Path $FrontendDir "package-lock.json")) {
+                & npm ci
+            }
+            else {
+                & npm install
+            }
+
+            if ($LASTEXITCODE -ne 0) {
+                throw "Frontend dependency installation failed."
+            }
+        }
+
+        Invoke-Checked { & npm run build } "Frontend UI rebuild failed."
+    }
+    finally {
+        Pop-Location
+    }
+
+    Write-Host "Frontend UI rebuild complete."
+}
+
 function Start-LocalDev {
     if ($UpgradeTools) {
         Install-SystemTools
@@ -726,5 +760,6 @@ switch ($Action) {
     "install" { Install-LocalDev }
     "run" { Start-LocalDev }
     "shutdown" { Stop-LocalDev }
+    "rebuild_ui" { Rebuild-Ui }
     "reset-postgres-password" { Reset-PostgresPassword }
 }
