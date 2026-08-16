@@ -1,6 +1,6 @@
 param(
     [Parameter(Position = 0)]
-    [ValidateSet("install", "run", "shutdown", "rebuild_ui", "rebuild_backend", "reset-postgres-password")]
+    [ValidateSet("install", "run", "shutdown", "rebuild_ui", "rebuild_backend", "diagnose_backend", "reset-postgres-password")]
     [string]$Action = "run",
 
     [string]$PostgresAdminUser = "postgres",
@@ -725,6 +725,63 @@ function Rebuild-Backend {
     Write-Host "Backend rebuild complete. Run '.\scripts\dev-local.ps1 run' to start the app."
 }
 
+function Diagnose-Backend {
+    $VenvPython = Join-Path $VenvDir "Scripts\python.exe"
+    if (-not (Test-Path $VenvPython)) {
+        throw "Missing backend virtual environment at $VenvPython. Run '.\scripts\dev-local.ps1 rebuild_backend' first."
+    }
+
+    Initialize-StateDirectory
+    $DiagnosticScriptPath = Join-Path $StateDir "backend-diagnostics.py"
+    $DiagnosticScript = @'
+import sys
+from pathlib import Path
+
+import fastapi
+import app.main as main
+import app.resources as app_resources
+from app.routers.public import resources as public_resources_router
+
+endpoint = "/api/resources/{locale}/methodology/{page}"
+resource_paths = sorted(path for path in main.app.openapi().get("paths", {}) if "resources" in path)
+methodology_path = Path(app_resources.resource_root()) / "bg-BG" / "statements-methodology.md"
+
+print(f"Python executable: {sys.executable}")
+print(f"FastAPI version: {fastapi.__version__}")
+print(f"sys.path[0]: {sys.path[0]}")
+print(f"app.main imported from: {main.__file__}")
+print(f"app.resources imported from: {app_resources.__file__}")
+print(f"public resources router imported from: {public_resources_router.__file__}")
+print(f"resource root: {app_resources.resource_root()}")
+print(f"statements methodology file: {methodology_path}")
+print(f"statements methodology file exists: {methodology_path.exists()}")
+print(f"methodology endpoint registered: {endpoint in main.app.openapi().get('paths', {})}")
+print("registered resource paths:")
+for path in resource_paths:
+    print(f"  {path}")
+
+try:
+    content = app_resources.methodology_text("statements", "bg-BG")
+    print(f"statements methodology bytes/chars loaded: {len(content.encode('utf-8'))}/{len(content)}")
+except Exception as exc:
+    print(f"statements methodology load error: {type(exc).__name__}: {exc}")
+'@
+    Write-Utf8NoBom -Path $DiagnosticScriptPath -Value $DiagnosticScript
+
+    Write-Host "Inspecting backend imports and route registration..."
+    Push-Location $BackendDir
+    try {
+        Invoke-Checked { & $VenvPython $DiagnosticScriptPath } "Backend diagnostics failed."
+    }
+    finally {
+        Pop-Location
+    }
+
+    Write-Host ""
+    Write-Host "If the endpoint is registered here but missing at http://localhost:$BackendPort/openapi.json, another backend process is probably serving port $BackendPort."
+    Write-Host "Check backend errors with: Get-Content .local-dev\backend.err.log -Tail 80"
+}
+
 function Start-LocalDev {
     if ($UpgradeTools) {
         Install-SystemTools
@@ -802,5 +859,6 @@ switch ($Action) {
     "shutdown" { Stop-LocalDev }
     "rebuild_ui" { Rebuild-Ui }
     "rebuild_backend" { Rebuild-Backend }
+    "diagnose_backend" { Diagnose-Backend }
     "reset-postgres-password" { Reset-PostgresPassword }
 }
