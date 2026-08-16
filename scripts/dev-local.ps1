@@ -738,6 +738,7 @@ import sys
 from pathlib import Path
 
 import fastapi
+import starlette
 import app.main as main
 import app.resources as app_resources
 from app.routers.public import resources as public_resources_router
@@ -748,6 +749,7 @@ methodology_path = Path(app_resources.resource_root()) / "bg-BG" / "statements-m
 
 print(f"Python executable: {sys.executable}")
 print(f"FastAPI version: {fastapi.__version__}")
+print(f"Starlette version: {starlette.__version__}")
 print(f"sys.path[0]: {sys.path[0]}")
 print(f"app.main imported from: {main.__file__}")
 print(f"app.resources imported from: {app_resources.__file__}")
