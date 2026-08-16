@@ -118,7 +118,7 @@ function Write-Utf8NoBom {
 function Stop-OrphanedLocalDevProcesses {
     $currentPid = $PID
     $rootPattern = "*" + $RootDir.Path + "*"
-    $knownNames = @("node.exe", "python.exe", "uvicorn.exe")
+    $knownNames = @("node.exe", "npm.exe", "npm.cmd", "python.exe", "pythonw.exe", "py.exe", "uvicorn.exe")
 
     try {
         $processes = Get-CimInstance Win32_Process |
@@ -136,6 +136,30 @@ function Stop-OrphanedLocalDevProcesses {
     catch {
         Write-Host "Could not scan for orphaned local dev processes. If npm reports locked files, close other PowerShell windows and editors that are running this app."
     }
+}
+
+function Assert-PortAvailable {
+    param(
+        [int]$Port,
+        [string]$ServiceName
+    )
+
+    $listeners = @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
+    if ($listeners.Count -eq 0) {
+        return
+    }
+
+    $details = foreach ($listener in $listeners) {
+        $processInfo = Get-CimInstance Win32_Process -Filter "ProcessId = $($listener.OwningProcess)" -ErrorAction SilentlyContinue
+        if ($processInfo) {
+            "PID $($processInfo.ProcessId): $($processInfo.CommandLine)"
+        }
+        else {
+            "PID $($listener.OwningProcess): process exited before it could be inspected"
+        }
+    }
+
+    throw "$ServiceName port $Port is already in use after shutdown. Stop that process or use a different port.`n$($details -join "`n")"
 }
 
 function Get-DatabaseUrl {
@@ -910,6 +934,8 @@ function Start-LocalDev {
 
     Initialize-StateDirectory
     Stop-LocalDev
+    Assert-PortAvailable -Port $BackendPort -ServiceName "Backend"
+    Assert-PortAvailable -Port $FrontendPort -ServiceName "Frontend"
 
     Write-Host "Running Alembic migrations..."
     Push-Location $BackendDir
@@ -925,9 +951,10 @@ function Start-LocalDev {
     if ($BackendReload) {
         $backendArguments = @("app.main:app", "--reload", "--host", "127.0.0.1", "--port", "$BackendPort")
     }
+    $backendArguments = @("-m", "uvicorn") + $backendArguments
 
     $backendProcess = Start-Process `
-        -FilePath $UvicornExe `
+        -FilePath $VenvPython `
         -ArgumentList $backendArguments `
         -WorkingDirectory $BackendDir `
         -PassThru `
