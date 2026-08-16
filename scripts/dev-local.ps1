@@ -735,6 +735,9 @@ function Diagnose-Backend {
     $DiagnosticScriptPath = Join-Path $StateDir "backend-diagnostics.py"
     $DiagnosticScript = @'
 import sys
+import asyncio
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 import fastapi
@@ -744,8 +747,53 @@ import app.resources as app_resources
 from app.routers.public import resources as public_resources_router
 
 endpoint = "/api/resources/{locale}/methodology/{page}"
+request_path = "/api/resources/bg-BG/methodology/statements"
 resource_paths = sorted(path for path in main.app.openapi().get("paths", {}) if "resources" in path)
 methodology_path = Path(app_resources.resource_root()) / "bg-BG" / "statements-methodology.md"
+
+async def call_asgi(path):
+    response = {"status": None, "headers": [], "body": b""}
+
+    async def receive():
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def send(message):
+        if message["type"] == "http.response.start":
+            response["status"] = message["status"]
+            response["headers"] = message.get("headers", [])
+        elif message["type"] == "http.response.body":
+            response["body"] += message.get("body", b"")
+
+    await main.app(
+        {
+            "type": "http",
+            "asgi": {"version": "3.0", "spec_version": "2.3"},
+            "http_version": "1.1",
+            "method": "GET",
+            "scheme": "http",
+            "path": path,
+            "raw_path": path.encode("ascii"),
+            "query_string": b"",
+            "headers": [(b"host", b"diagnostic.local")],
+            "client": ("127.0.0.1", 50000),
+            "server": ("127.0.0.1", 8000),
+            "root_path": "",
+        },
+        receive,
+        send,
+    )
+    return response
+
+def call_live_server(path):
+    url = f"http://127.0.0.1:8000{path}"
+    request = urllib.request.Request(url, headers={"Accept": "text/markdown, text/plain"})
+    try:
+        with urllib.request.urlopen(request, timeout=5) as response:
+            return response.status, response.headers.get("content-type"), len(response.read())
+    except urllib.error.HTTPError as exc:
+        return exc.code, exc.headers.get("content-type"), len(exc.read())
+    except Exception as exc:
+        return f"{type(exc).__name__}: {exc}", None, 0
 
 print(f"Python executable: {sys.executable}")
 print(f"FastAPI version: {fastapi.__version__}")
@@ -761,6 +809,16 @@ print(f"methodology endpoint registered: {endpoint in main.app.openapi().get('pa
 print("registered resource paths:")
 for path in resource_paths:
     print(f"  {path}")
+
+asgi_response = asyncio.run(call_asgi(request_path))
+asgi_content_type = next(
+    (value.decode("latin1") for name, value in asgi_response["headers"] if name.lower() == b"content-type"),
+    None,
+)
+print(f"in-memory ASGI {request_path}: status={asgi_response['status']} content-type={asgi_content_type} bytes={len(asgi_response['body'])}")
+
+live_status, live_content_type, live_bytes = call_live_server(request_path)
+print(f"live server {request_path}: status={live_status} content-type={live_content_type} bytes={live_bytes}")
 
 try:
     content = app_resources.methodology_text("statements", "bg-BG")
@@ -780,6 +838,24 @@ except Exception as exc:
     }
 
     Write-Host ""
+    $listeners = @(Get-NetTCPConnection -LocalPort $BackendPort -State Listen -ErrorAction SilentlyContinue)
+    if ($listeners.Count -eq 0) {
+        Write-Host "No process is currently listening on backend port $BackendPort."
+    }
+    else {
+        Write-Host "Processes listening on backend port ${BackendPort}:"
+        foreach ($listener in $listeners) {
+            $processInfo = Get-CimInstance Win32_Process -Filter "ProcessId = $($listener.OwningProcess)" -ErrorAction SilentlyContinue
+            if ($processInfo) {
+                Write-Host "  PID $($processInfo.ProcessId): $($processInfo.CommandLine)"
+            }
+            else {
+                Write-Host "  PID $($listener.OwningProcess): process exited before it could be inspected"
+            }
+        }
+        Write-Host ""
+    }
+
     Write-Host "If the endpoint is registered here but missing at http://localhost:$BackendPort/openapi.json, another backend process is probably serving port $BackendPort."
     Write-Host "Check backend errors with: Get-Content .local-dev\backend.err.log -Tail 80"
 }
