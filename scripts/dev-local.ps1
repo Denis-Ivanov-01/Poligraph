@@ -138,27 +138,63 @@ function Stop-OrphanedLocalDevProcesses {
     }
 }
 
+function Get-PortListenerDetails {
+    param([int]$Port)
+
+    $listeners = @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
+    foreach ($listener in $listeners) {
+        $processInfo = Get-CimInstance Win32_Process -Filter "ProcessId = $($listener.OwningProcess)" -ErrorAction SilentlyContinue
+        [pscustomobject]@{
+            ProcessId = $listener.OwningProcess
+            CommandLine = if ($processInfo) { $processInfo.CommandLine } else { "process exited before it could be inspected" }
+        }
+    }
+}
+
+function Stop-PortListeners {
+    param(
+        [int]$Port,
+        [string]$ServiceName
+    )
+
+    for ($attempt = 1; $attempt -le 20; $attempt++) {
+        $listeners = @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
+        if ($listeners.Count -eq 0) {
+            return
+        }
+
+        foreach ($pidToStop in @($listeners | Select-Object -ExpandProperty OwningProcess -Unique)) {
+            if ($pidToStop -eq $PID) {
+                continue
+            }
+
+            $processInfo = Get-CimInstance Win32_Process -Filter "ProcessId = $pidToStop" -ErrorAction SilentlyContinue
+            if ($processInfo) {
+                Write-Host "Stopping $ServiceName port listener on PID $pidToStop..."
+                Stop-Process -Id $pidToStop -Force -ErrorAction SilentlyContinue
+            }
+        }
+
+        Start-Sleep -Milliseconds 500
+    }
+}
+
 function Assert-PortAvailable {
     param(
         [int]$Port,
         [string]$ServiceName
     )
 
-    $listeners = @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
-    if ($listeners.Count -eq 0) {
-        return
+    for ($attempt = 1; $attempt -le 20; $attempt++) {
+        $listeners = @(Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue)
+        if ($listeners.Count -eq 0) {
+            return
+        }
+
+        Start-Sleep -Milliseconds 500
     }
 
-    $details = foreach ($listener in $listeners) {
-        $processInfo = Get-CimInstance Win32_Process -Filter "ProcessId = $($listener.OwningProcess)" -ErrorAction SilentlyContinue
-        if ($processInfo) {
-            "PID $($processInfo.ProcessId): $($processInfo.CommandLine)"
-        }
-        else {
-            "PID $($listener.OwningProcess): process exited before it could be inspected"
-        }
-    }
-
+    $details = @(Get-PortListenerDetails -Port $Port | ForEach-Object { "PID $($_.ProcessId): $($_.CommandLine)" })
     throw "$ServiceName port $Port is already in use after shutdown. Stop that process or use a different port.`n$($details -join "`n")"
 }
 
@@ -670,6 +706,8 @@ function Stop-LocalDev {
     }
 
     Stop-OrphanedLocalDevProcesses
+    Stop-PortListeners -Port $BackendPort -ServiceName "backend"
+    Stop-PortListeners -Port $FrontendPort -ServiceName "frontend"
 
     if (Test-Path $PidFile) {
         Remove-Item -LiteralPath $PidFile
